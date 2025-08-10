@@ -109,9 +109,39 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .loading-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+        }
+        .dark .loading-content {
+            background: #1f2937;
+            color: white;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 min-h-screen transition-colors duration-300">
+    
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-lg font-semibold">جاري تحميل البيانات...</p>
+        </div>
+    </div>
     
     <!-- Login/Register Screen -->
     <div id="authScreen" class="min-h-screen flex items-center justify-center p-4">
@@ -851,8 +881,7 @@
                     if (user) {
                         currentUser = user;
                         document.getElementById('currentUser').textContent = user.email;
-                        await loadAccounts();
-                        showMainApp();
+                        await initializeApp();
                     } else {
                         showAuthScreen();
                     }
@@ -861,6 +890,32 @@
                 console.error('Error initializing app:', error);
             }
         });
+
+        // Initialize app after login
+        async function initializeApp() {
+            showLoading(true);
+            try {
+                await loadAccounts();
+                showMainApp();
+                showNotification('تم تسجيل الدخول بنجاح!', 'success');
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                showNotification('حدث خطأ في تحميل البيانات', 'error');
+                showAuthScreen();
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Loading overlay
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                overlay.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+            }
+        }
 
         // Dark mode
         function initializeDarkMode() {
@@ -1040,6 +1095,7 @@
                 }
             } catch (error) {
                 console.error('Error loading accounts:', error);
+                throw error;
             }
         }
 
@@ -1065,6 +1121,7 @@
                 displayAccounts();
             } catch (error) {
                 console.error('Error creating default account:', error);
+                throw error;
             }
         }
 
@@ -1110,13 +1167,21 @@
         }
 
         async function selectAccount(accountId) {
-            currentAccountId = accountId;
-            const account = accounts.find(a => a.id === accountId);
-            if (account) {
-                document.getElementById('currentAccount').textContent = account.name;
-                await loadUserTrades();
-                updateDashboard();
-                showNotification(`تم التبديل إلى حساب: ${account.name}`, 'info');
+            showLoading(true);
+            try {
+                currentAccountId = accountId;
+                const account = accounts.find(a => a.id === accountId);
+                if (account) {
+                    document.getElementById('currentAccount').textContent = account.name;
+                    await loadUserTrades();
+                    updateDashboard();
+                    showNotification(`تم التبديل إلى حساب: ${account.name}`, 'info');
+                }
+            } catch (error) {
+                console.error('Error selecting account:', error);
+                showNotification('حدث خطأ في تبديل الحساب', 'error');
+            } finally {
+                showLoading(false);
             }
         }
 
@@ -1127,6 +1192,7 @@
             }
             
             if (confirm('هل أنت متأكد من حذف هذا الحساب؟ سيتم حذف جميع الصفقات المرتبطة به.')) {
+                showLoading(true);
                 try {
                     // Delete account
                     await db.collection('accounts').doc(accountId).delete();
@@ -1160,6 +1226,8 @@
                 } catch (error) {
                     console.error('Error deleting account:', error);
                     showNotification('حدث خطأ في حذف الحساب', 'error');
+                } finally {
+                    showLoading(false);
                 }
             }
         }
