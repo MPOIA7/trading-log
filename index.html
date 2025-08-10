@@ -7,6 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
         body {
             font-family: 'Tahoma', 'Arial', sans-serif;
@@ -84,11 +88,11 @@
             <form id="loginForm" class="space-y-6">
                 <div>
                     <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                        <i class="fas fa-user ml-2"></i>اسم المستخدم
+                        <i class="fas fa-envelope ml-2"></i>البريد الإلكتروني
                     </label>
-                    <input type="text" id="loginUsername" required
+                    <input type="email" id="loginEmail" required
                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="أدخل اسم المستخدم">
+                        placeholder="أدخل بريدك الإلكتروني">
                 </div>
                 
                 <div>
@@ -116,11 +120,11 @@
             <form id="registerForm" class="hidden space-y-6 mt-6">
                 <div>
                     <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                        <i class="fas fa-user ml-2"></i>اسم المستخدم
+                        <i class="fas fa-envelope ml-2"></i>البريد الإلكتروني
                     </label>
-                    <input type="text" id="regUsername" required
+                    <input type="email" id="regEmail" required
                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="اختر اسم مستخدم">
+                        placeholder="أدخل بريدك الإلكتروني">
                 </div>
                 
                 <div>
@@ -129,7 +133,7 @@
                     </label>
                     <input type="password" id="regPassword" required
                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="أدخل كلمة المرور (4 أحرف على الأقل)">
+                        placeholder="أدخل كلمة المرور (6 أحرف على الأقل)">
                 </div>
                 
                 <div>
@@ -154,7 +158,7 @@
             </form>
         </div>
     </div>
-
+    
     <!-- Main App -->
     <div id="mainApp" class="hidden">
         <!-- Navigation -->
@@ -201,7 +205,7 @@
                 </div>
             </div>
         </nav>
-
+        
         <!-- Mobile Navigation -->
         <div class="md:hidden bg-white dark:bg-gray-800 shadow">
             <div class="flex justify-around py-2">
@@ -219,7 +223,7 @@
                 </button>
             </div>
         </div>
-
+        
         <!-- Main Content -->
         <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             <!-- Dashboard Section -->
@@ -232,7 +236,7 @@
                     </h1>
                     <p class="text-gray-600 dark:text-gray-400">تتبع صفقاتك واحصل على رؤى قيمة لأدائك</p>
                 </div>
-
+                
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                     <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white">
@@ -275,7 +279,7 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <!-- Performance Chart -->
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
                     <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
@@ -286,7 +290,7 @@
                         <canvas id="performanceChart"></canvas>
                     </div>
                 </div>
-
+                
                 <!-- Recent Trades -->
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                     <div class="flex justify-between items-center mb-4">
@@ -317,7 +321,7 @@
                     </div>
                 </div>
             </div>
-
+            
             <!-- Add Trade Section -->
             <div id="addTradeSection" class="section hidden">
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
@@ -443,7 +447,7 @@
                     </form>
                 </div>
             </div>
-
+            
             <!-- Trades Section -->
             <div id="tradesSection" class="section hidden">
                 <!-- Filters -->
@@ -525,7 +529,7 @@
                     </div>
                 </div>
             </div>
-
+            
             <!-- Stats Section -->
             <div id="statsSection" class="section hidden">
                 <!-- Stats Overview -->
@@ -657,129 +661,45 @@
     </div>
 
     <script>
-        // IndexedDB Management
-        class IndexedDBManager {
-            constructor() {
-                this.dbName = 'TradingJournalDB';
-                this.dbVersion = 1;
-                this.db = null;
-            }
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDdLQ1RG7zIjgON4msjNPULc4-T-3EyNJc",
+            authDomain: "trading-journal-3e09a.firebaseapp.com",
+            projectId: "trading-journal-3e09a",
+            storageBucket: "trading-journal-3e09a.firebasestorage.app",
+            messagingSenderId: "827403620557",
+            appId: "1:827403620557:web:bfb9e23dc3114badb09984",
+            measurementId: "G-MY3M1SHV4H"
+        };
 
-            async init() {
-                return new Promise((resolve, reject) => {
-                    const request = indexedDB.open(this.dbName, this.dbVersion);
-                    
-                    request.onerror = (event) => {
-                        reject('Error opening database');
-                    };
-                    
-                    request.onsuccess = (event) => {
-                        this.db = event.target.result;
-                        resolve(this.db);
-                    };
-                    
-                    request.onupgradeneeded = (event) => {
-                        const db = event.target.result;
-                        
-                        // Create users store
-                        if (!db.objectStoreNames.contains('users')) {
-                            const usersStore = db.createObjectStore('users', { keyPath: 'username' });
-                            usersStore.createIndex('password', 'password', { unique: false });
-                        }
-                        
-                        // Create trades store
-                        if (!db.objectStoreNames.contains('trades')) {
-                            const tradesStore = db.createObjectStore('trades', { keyPath: 'id', autoIncrement: true });
-                            tradesStore.createIndex('username', 'username', { unique: false });
-                            tradesStore.createIndex('date', 'date', { unique: false });
-                        }
-                    };
-                });
-            }
-
-            async addUser(username, password) {
-                return new Promise((resolve, reject) => {
-                    const transaction = this.db.transaction(['users'], 'readwrite');
-                    const store = transaction.objectStore('users');
-                    
-                    const request = store.add({ username, password });
-                    
-                    request.onsuccess = () => resolve();
-                    request.onerror = () => reject('Username already exists');
-                });
-            }
-
-            async getUser(username) {
-                return new Promise((resolve, reject) => {
-                    const transaction = this.db.transaction(['users'], 'readonly');
-                    const store = transaction.objectStore('users');
-                    
-                    const request = store.get(username);
-                    
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject(null);
-                });
-            }
-
-            async addTrade(trade) {
-                return new Promise((resolve, reject) => {
-                    const transaction = this.db.transaction(['trades'], 'readwrite');
-                    const store = transaction.objectStore('trades');
-                    
-                    const request = store.add(trade);
-                    
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject('Error adding trade');
-                });
-            }
-
-            async getTrades(username) {
-                return new Promise((resolve, reject) => {
-                    const transaction = this.db.transaction(['trades'], 'readonly');
-                    const store = transaction.objectStore('trades');
-                    const index = store.index('username');
-                    
-                    const request = index.getAll(username);
-                    
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject([]);
-                });
-            }
-
-            async deleteTrade(id) {
-                return new Promise((resolve, reject) => {
-                    const transaction = this.db.transaction(['trades'], 'readwrite');
-                    const store = transaction.objectStore('trades');
-                    
-                    const request = store.delete(id);
-                    
-                    request.onsuccess = () => resolve();
-                    request.onerror = () => reject('Error deleting trade');
-                });
-            }
-        }
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
         // Global variables
-        let dbManager = new IndexedDBManager();
         let currentUser = null;
         let trades = [];
         let currentSection = 'dashboard';
         let performanceChart = null;
-        
+
         // Initialize app
         document.addEventListener('DOMContentLoaded', async function() {
             try {
-                await dbManager.init();
                 initializeDarkMode();
                 initializeEventListeners();
                 
                 // Check if user is logged in
-                const savedUser = localStorage.getItem('currentUser');
-                if (savedUser) {
-                    currentUser = savedUser;
-                    await loadUserTrades();
-                    showMainApp();
-                }
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        document.getElementById('currentUser').textContent = user.email;
+                        await loadUserTrades();
+                        showMainApp();
+                    } else {
+                        showAuthScreen();
+                    }
+                });
             } catch (error) {
                 console.error('Error initializing app:', error);
             }
@@ -816,8 +736,8 @@
         // Authentication functions
         async function handleLogin(e) {
             e.preventDefault();
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('password').value;
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
             const loginBtn = document.getElementById('loginBtn');
             
             // Show loading
@@ -825,18 +745,11 @@
             loginBtn.disabled = true;
             
             try {
-                const user = await dbManager.getUser(username);
-                if (user && user.password === password) {
-                    currentUser = username;
-                    localStorage.setItem('currentUser', currentUser);
-                    await loadUserTrades();
-                    showMainApp();
-                } else {
-                    showAuthError('اسم المستخدم أو كلمة المرور غير صحيحة');
-                }
+                await auth.signInWithEmailAndPassword(email, password);
+                // User will be handled by onAuthStateChanged
             } catch (error) {
-                showAuthError('حدث خطأ في تسجيل الدخول');
-            } finally {
+                console.error('Login error:', error);
+                showAuthError(getAuthErrorMessage(error.code));
                 loginBtn.innerHTML = '<i class="fas fa-sign-in-alt ml-2"></i>تسجيل الدخول';
                 loginBtn.disabled = false;
             }
@@ -844,7 +757,7 @@
 
         async function handleRegister(e) {
             e.preventDefault();
-            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
             const password = document.getElementById('regPassword').value;
             const confirmPassword = document.getElementById('regPasswordConfirm').value;
             const registerBtn = document.getElementById('registerBtn');
@@ -854,8 +767,8 @@
                 return;
             }
             
-            if (password.length < 4) {
-                showAuthError('كلمة المرور يجب أن تكون 4 أحرف على الأقل');
+            if (password.length < 6) {
+                showAuthError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
                 return;
             }
             
@@ -864,25 +777,44 @@
             registerBtn.disabled = true;
             
             try {
-                await dbManager.addUser(username, password);
-                currentUser = username;
-                localStorage.setItem('currentUser', currentUser);
-                trades = []; // Start with empty trades for new user
-                showMainApp();
+                await auth.createUserWithEmailAndPassword(email, password);
+                // User will be handled by onAuthStateChanged
                 showNotification('تم إنشاء الحساب بنجاح!', 'success');
             } catch (error) {
-                showAuthError('اسم المستخدم موجود بالفعل');
-            } finally {
+                console.error('Registration error:', error);
+                showAuthError(getAuthErrorMessage(error.code));
                 registerBtn.innerHTML = '<i class="fas fa-user-plus ml-2"></i>إنشاء حساب';
                 registerBtn.disabled = false;
             }
         }
 
+        function getAuthErrorMessage(errorCode) {
+            switch (errorCode) {
+                case 'auth/user-not-found':
+                    return 'المستخدم غير موجود';
+                case 'auth/wrong-password':
+                    return 'كلمة المرور غير صحيحة';
+                case 'auth/email-already-in-use':
+                    return 'البريد الإلكتروني مستخدم بالفعل';
+                case 'auth/weak-password':
+                    return 'كلمة المرور ضعيفة جداً';
+                case 'auth/invalid-email':
+                    return 'البريد الإلكتروني غير صالح';
+                case 'auth/too-many-requests':
+                    return 'محاولات كثيرة، حاول لاحقاً';
+                default:
+                    return 'حدث خطأ، حاول مرة أخرى';
+            }
+        }
+
         function logout() {
-            currentUser = null;
-            trades = [];
-            localStorage.removeItem('currentUser');
-            showAuthScreen();
+            auth.signOut().then(() => {
+                currentUser = null;
+                trades = [];
+                showAuthScreen();
+            }).catch((error) => {
+                console.error('Logout error:', error);
+            });
         }
 
         function showAuthError(message) {
@@ -914,7 +846,6 @@
         function showMainApp() {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('mainApp').classList.remove('hidden');
-            document.getElementById('currentUser').textContent = currentUser;
             showSection('dashboard');
             updateFilterOptions();
         }
@@ -922,9 +853,18 @@
         // Load user trades
         async function loadUserTrades() {
             try {
-                trades = await dbManager.getTrades(currentUser);
-                // Sort by date descending
-                trades.sort((a, b) => new Date(b.date) - new Date(a.date));
+                const snapshot = await db.collection('trades')
+                    .where('userId', '==', currentUser.uid)
+                    .orderBy('date', 'desc')
+                    .get();
+                
+                trades = [];
+                snapshot.forEach(doc => {
+                    trades.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
             } catch (error) {
                 console.error('Error loading trades:', error);
                 trades = [];
@@ -983,7 +923,7 @@
             saveBtn.disabled = true;
             
             const trade = {
-                username: currentUser,
+                userId: currentUser.uid,
                 pair: document.getElementById('pair').value,
                 type: document.getElementById('type').value,
                 entryPrice: parseFloat(document.getElementById('entryPrice').value),
@@ -998,8 +938,8 @@
             };
             
             try {
-                const id = await dbManager.addTrade(trade);
-                trade.id = id;
+                const docRef = await db.collection('trades').add(trade);
+                trade.id = docRef.id;
                 trades.unshift(trade);
                 
                 // Reset form
@@ -1028,7 +968,7 @@
         async function deleteTrade(id) {
             if (confirm('هل أنت متأكد من حذف هذه الصفقة؟')) {
                 try {
-                    await dbManager.deleteTrade(id);
+                    await db.collection('trades').doc(id).delete();
                     trades = trades.filter(t => t.id !== id);
                     displayTrades();
                     updateDashboard();
@@ -1205,7 +1145,7 @@
                         ${trade.profitLoss >= 0 ? '+' : ''}$${trade.profitLoss.toFixed(2)}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button onclick="deleteTrade(${trade.id})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                        <button onclick="deleteTrade('${trade.id}')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
