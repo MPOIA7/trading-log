@@ -92,9 +92,29 @@
             max-height: 60px;
             overflow: hidden;
         }
+        /* Debug info */
+        .debug-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 9999;
+            max-width: 300px;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 min-h-screen transition-colors duration-300">
+    
+    <!-- Debug Info (Remove in production) -->
+    <div id="debugInfo" class="debug-info hidden">
+        <div>Firebase Status: <span id="firebaseStatus">Checking...</span></div>
+        <div>Auth Status: <span id="authStatus">Checking...</span></div>
+        <div>User: <span id="debugUser">None</span></div>
+    </div>
     
     <!-- Login/Register Screen -->
     <div id="authScreen" class="min-h-screen flex items-center justify-center p-4">
@@ -911,6 +931,9 @@
     </div>
     
     <script>
+        // Show debug info
+        document.getElementById('debugInfo').classList.remove('hidden');
+        
         // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDdLQ1RG7zIjgON4msjNPULc4-T-3EyNJc",
@@ -923,9 +946,20 @@
         };
         
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        let app;
+        let auth;
+        let db;
+        
+        try {
+            app = firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+            document.getElementById('firebaseStatus').textContent = 'Connected';
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            document.getElementById('firebaseStatus').textContent = 'Error: ' + error.message;
+        }
         
         // Global variables
         let currentUser = null;
@@ -938,11 +972,16 @@
         // Initialize app
         document.addEventListener('DOMContentLoaded', async function() {
             try {
+                console.log('Starting app initialization...');
                 initializeDarkMode();
                 initializeEventListeners();
                 
                 // Check if user is logged in
                 auth.onAuthStateChanged(async (user) => {
+                    console.log('Auth state changed:', user);
+                    document.getElementById('authStatus').textContent = user ? 'Logged in' : 'Not logged in';
+                    document.getElementById('debugUser').textContent = user ? user.email : 'None';
+                    
                     if (user) {
                         currentUser = user;
                         document.getElementById('currentUser').textContent = user.email;
@@ -954,6 +993,7 @@
                 });
             } catch (error) {
                 console.error('Error initializing app:', error);
+                showNotification('خطأ في تهيئة التطبيق: ' + error.message, 'error');
             }
         });
         
@@ -991,6 +1031,8 @@
         // Load user data
         async function loadUserData() {
             try {
+                console.log('Loading user data...');
+                
                 // Load accounts
                 const accountsSnapshot = await db.collection('accounts')
                     .where('userId', '==', currentUser.uid)
@@ -1004,6 +1046,8 @@
                         ...doc.data()
                     });
                 });
+                
+                console.log('Loaded accounts:', accounts.length);
                 
                 // Set default account if none selected
                 if (accounts.length > 0 && !currentAccountId) {
@@ -1020,12 +1064,14 @@
                 updateDashboard();
             } catch (error) {
                 console.error('Error loading user data:', error);
+                showNotification('خطأ في تحميل البيانات: ' + error.message, 'error');
             }
         }
         
         // Load user trades
         async function loadUserTrades() {
             try {
+                console.log('Loading user trades...');
                 let query = db.collection('trades')
                     .where('userId', '==', currentUser.uid);
                 
@@ -1044,6 +1090,8 @@
                     });
                 });
                 
+                console.log('Loaded trades:', trades.length);
+                
                 // Update account balances
                 updateAccountBalances();
             } catch (error) {
@@ -1059,12 +1107,15 @@
             const password = document.getElementById('loginPassword').value;
             const loginBtn = document.getElementById('loginBtn');
             
+            console.log('Attempting login with:', email);
+            
             // Show loading
             loginBtn.innerHTML = '<span class="loading-spinner"></span> جاري تسجيل الدخول...';
             loginBtn.disabled = true;
             
             try {
-                await auth.signInWithEmailAndPassword(email, password);
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                console.log('Login successful:', userCredential.user);
                 // User will be handled by onAuthStateChanged
             } catch (error) {
                 console.error('Login error:', error);
@@ -1091,12 +1142,15 @@
                 return;
             }
             
+            console.log('Attempting registration with:', email);
+            
             // Show loading
             registerBtn.innerHTML = '<span class="loading-spinner"></span> جاري إنشاء الحساب...';
             registerBtn.disabled = true;
             
             try {
-                await auth.createUserWithEmailAndPassword(email, password);
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                console.log('Registration successful:', userCredential.user);
                 // User will be handled by onAuthStateChanged
                 showNotification('تم إنشاء الحساب بنجاح!', 'success');
             } catch (error) {
@@ -1108,6 +1162,7 @@
         }
         
         function getAuthErrorMessage(errorCode) {
+            console.log('Auth error code:', errorCode);
             switch (errorCode) {
                 case 'auth/user-not-found':
                     return 'المستخدم غير موجود';
@@ -1121,13 +1176,22 @@
                     return 'البريد الإلكتروني غير صالح';
                 case 'auth/too-many-requests':
                     return 'محاولات كثيرة، حاول لاحقاً';
+                case 'auth/network-request-failed':
+                    return 'مشكلة في الاتصال بالإنترنت';
+                case 'auth/invalid-api-key':
+                    return 'مفتاح API غير صالح';
+                case 'auth/app-not-authorized':
+                    return 'التطبيق غير مصرح به';
+                case 'auth/operation-not-allowed':
+                    return 'عملية غير مسموح بها';
                 default:
-                    return 'حدث خطأ، حاول مرة أخرى';
+                    return 'حدث خطأ، حاول مرة أخرى: ' + errorCode;
             }
         }
         
         function logout() {
             auth.signOut().then(() => {
+                console.log('User logged out');
                 currentUser = null;
                 trades = [];
                 accounts = [];
@@ -1254,7 +1318,7 @@
                 showNotification('تم إضافة الحساب بنجاح!', 'success');
             } catch (error) {
                 console.error('Error adding account:', error);
-                showNotification('حدث خطأ في إضافة الحساب', 'error');
+                showNotification('حدث خطأ في إضافة الحساب: ' + error.message, 'error');
             }
         }
         
@@ -1416,7 +1480,7 @@
                     showNotification('تم حذف الحساب', 'info');
                 } catch (error) {
                     console.error('Error deleting account:', error);
-                    showNotification('حدث خطأ في حذف الحساب', 'error');
+                    showNotification('حدث خطأ في حذف الحساب: ' + error.message, 'error');
                 }
             }
         }
@@ -1478,7 +1542,7 @@
                 }, 1000);
             } catch (error) {
                 console.error('Error adding trade:', error);
-                showNotification('حدث خطأ في حفظ الصفقة', 'error');
+                showNotification('حدث خطأ في حفظ الصفقة: ' + error.message, 'error');
             } finally {
                 saveBtn.innerHTML = '<i class="fas fa-save ml-2"></i>حفظ الصفقة';
                 saveBtn.disabled = false;
@@ -1510,7 +1574,7 @@
                     showNotification('تم حذف الصفقة', 'info');
                 } catch (error) {
                     console.error('Error deleting trade:', error);
-                    showNotification('حدث خطأ في حذف الصفقة', 'error');
+                    showNotification('حدث خطأ في حذف الصفقة: ' + error.message, 'error');
                 }
             }
         }
