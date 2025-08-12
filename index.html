@@ -52,6 +52,46 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* Mobile improvements */
+        @media (max-width: 768px) {
+            .mobile-card {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            .mobile-text {
+                font-size: 0.875rem;
+            }
+            .mobile-button {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+            .mobile-nav {
+                bottom: 0;
+                position: fixed;
+                width: 100%;
+                z-index: 40;
+            }
+        }
+        /* Account cards */
+        .account-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .account-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .account-card.active {
+            border: 2px solid #3B82F6;
+        }
+        /* Search panel */
+        .search-panel {
+            transition: all 0.3s ease;
+        }
+        .search-panel.collapsed {
+            max-height: 60px;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 min-h-screen transition-colors duration-300">
@@ -141,7 +181,7 @@
                         <i class="fas fa-lock ml-2"></i>تأكيد كلمة المرور
                     </label>
                     <input type="password" id="regPasswordConfirm" required
-                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                         placeholder="أعد إدخال كلمة المرور">
                 </div>
                 
@@ -173,6 +213,9 @@
                             <div class="mr-10 flex items-baseline space-x-4 space-x-reverse">
                                 <button onclick="showSection('dashboard')" class="nav-btn text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
                                     <i class="fas fa-home ml-2"></i>الرئيسية
+                                </button>
+                                <button onclick="showSection('accounts')" class="nav-btn text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
+                                    <i class="fas fa-wallet ml-2"></i>الحسابات
                                 </button>
                                 <button onclick="showSection('addTrade')" class="nav-btn text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
                                     <i class="fas fa-plus ml-2"></i>إضافة صفقة
@@ -207,10 +250,13 @@
         </nav>
         
         <!-- Mobile Navigation -->
-        <div class="md:hidden bg-white dark:bg-gray-800 shadow">
+        <div class="md:hidden bg-white dark:bg-gray-800 shadow mobile-nav">
             <div class="flex justify-around py-2">
                 <button onclick="showSection('dashboard')" class="nav-btn-mobile p-2 text-gray-600 dark:text-gray-300">
                     <i class="fas fa-home text-xl"></i>
+                </button>
+                <button onclick="showSection('accounts')" class="nav-btn-mobile p-2 text-gray-600 dark:text-gray-300">
+                    <i class="fas fa-wallet text-xl"></i>
                 </button>
                 <button onclick="showSection('addTrade')" class="nav-btn-mobile p-2 text-gray-600 dark:text-gray-300">
                     <i class="fas fa-plus text-xl"></i>
@@ -225,11 +271,11 @@
         </div>
         
         <!-- Main Content -->
-        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 mb-20 md:mb-0">
             <!-- Dashboard Section -->
             <div id="dashboardSection" class="section fade-in">
                 <!-- Welcome Card -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6 mobile-card">
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                         <i class="fas fa-home ml-2 text-blue-600 dark:text-blue-400"></i>
                         مرحباً بك في سجل التداول الخاص بك
@@ -237,42 +283,58 @@
                     <p class="text-gray-600 dark:text-gray-400">تتبع صفقاتك واحصل على رؤى قيمة لأدائك</p>
                 </div>
                 
+                <!-- Current Account Balance -->
+                <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg p-6 mb-6 text-white mobile-card">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-purple-100">الحساب الحالي</p>
+                            <p class="text-xl font-bold" id="currentAccountName">اختر حساب</p>
+                            <p class="text-3xl font-bold mt-2" id="currentAccountBalance">$0.00</p>
+                        </div>
+                        <div class="text-right">
+                            <span id="currentAccountType" class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm">
+                                --
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white">
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white mobile-card">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-blue-100">إجمالي الصفقات</p>
+                                <p class="text-blue-100 mobile-text">إجمالي الصفقات</p>
                                 <p class="text-3xl font-bold" id="totalTrades">0</p>
                             </div>
                             <i class="fas fa-chart-bar text-4xl text-blue-200"></i>
                         </div>
                     </div>
                     
-                    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white">
+                    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white mobile-card">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-green-100">نسبة الربح</p>
+                                <p class="text-green-100 mobile-text">نسبة الربح</p>
                                 <p class="text-3xl font-bold" id="winRate">0%</p>
                             </div>
                             <i class="fas fa-percentage text-4xl text-green-200"></i>
                         </div>
                     </div>
                     
-                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white">
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white mobile-card">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-purple-100">إجمالي الربح</p>
+                                <p class="text-purple-100 mobile-text">إجمالي الربح</p>
                                 <p class="text-3xl font-bold" id="totalProfit">$0</p>
                             </div>
                             <i class="fas fa-trophy text-4xl text-purple-200"></i>
                         </div>
                     </div>
                     
-                    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-6 text-white">
+                    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-6 text-white mobile-card">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-red-100">إجمالي الخسارة</p>
+                                <p class="text-red-100 mobile-text">إجمالي الخسارة</p>
                                 <p class="text-3xl font-bold" id="totalLoss">$0</p>
                             </div>
                             <i class="fas fa-times-circle text-4xl text-red-200"></i>
@@ -281,7 +343,7 @@
                 </div>
                 
                 <!-- Performance Chart -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6 mobile-card">
                     <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
                         <i class="fas fa-chart-line ml-2 text-blue-600 dark:text-blue-400"></i>
                         أداء الشهور الستة الأخيرة
@@ -292,7 +354,7 @@
                 </div>
                 
                 <!-- Recent Trades -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold text-gray-900 dark:text-white">
                             <i class="fas fa-history ml-2 text-blue-600 dark:text-blue-400"></i>
@@ -322,13 +384,43 @@
                 </div>
             </div>
             
+            <!-- Accounts Section -->
+            <div id="accountsSection" class="section hidden">
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6 mobile-card">
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            <i class="fas fa-wallet ml-2 text-blue-600 dark:text-blue-400"></i>
+                            إدارة الحسابات
+                        </h1>
+                        <button onclick="showAddAccountModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mobile-button">
+                            <i class="fas fa-plus ml-2"></i>إضافة حساب
+                        </button>
+                    </div>
+                    
+                    <div id="accountsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Accounts will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
             <!-- Add Trade Section -->
             <div id="addTradeSection" class="section hidden">
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                         <i class="fas fa-plus-circle ml-2 text-blue-600 dark:text-blue-400"></i>
                         إضافة صفقة جديدة
                     </h1>
+                    
+                    <!-- Account Selection -->
+                    <div class="mb-6">
+                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
+                            <i class="fas fa-wallet ml-2"></i>الحساب
+                        </label>
+                        <select id="tradeAccount" required
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                            <option value="">اختر الحساب</option>
+                        </select>
+                    </div>
                     
                     <form id="tradeForm" class="space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -440,7 +532,7 @@
                         
                         <div class="flex justify-end">
                             <button type="submit" id="saveTradeBtn"
-                                class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105">
+                                class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 mobile-button">
                                 <i class="fas fa-save ml-2"></i>حفظ الصفقة
                             </button>
                         </div>
@@ -450,51 +542,121 @@
             
             <!-- Trades Section -->
             <div id="tradesSection" class="section hidden">
-                <!-- Filters -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
-                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                        <i class="fas fa-filter ml-2 text-blue-600 dark:text-blue-400"></i>
-                        الفلاتر والبحث
-                    </h2>
+                <!-- Advanced Search Panel -->
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6 mobile-card search-panel" id="searchPanel">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                            <i class="fas fa-search ml-2 text-blue-600 dark:text-blue-400"></i>
+                            البحث المتقدم
+                        </h2>
+                        <button onclick="toggleSearchPanel()" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                            <i class="fas fa-chevron-down" id="searchToggleIcon"></i>
+                        </button>
+                    </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">الزوج</label>
-                            <select id="filterPair" onchange="filterTrades()"
-                                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                <option value="">الكل</option>
-                            </select>
+                    <div id="searchContent">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">الحساب</label>
+                                <select id="filterAccount" onchange="filterTrades()"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">الكل</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">الزوج</label>
+                                <select id="filterPair" onchange="filterTrades()"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">الكل</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">النتيجة</label>
+                                <select id="filterResult" onchange="filterTrades()"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">الكل</option>
+                                    <option value="profit">ربح</option>
+                                    <option value="loss">خسارة</option>
+                                    <option value="breakeven">تعادل</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">نوع الصفقة</label>
+                                <select id="filterType" onchange="filterTrades()"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">الكل</option>
+                                    <option value="Buy">شراء</option>
+                                    <option value="Sell">بيع</option>
+                                </select>
+                            </div>
                         </div>
                         
-                        <div>
-                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">النتيجة</label>
-                            <select id="filterResult" onchange="filterTrades()"
-                                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                <option value="">الكل</option>
-                                <option value="profit">ربح</option>
-                                <option value="loss">خسارة</option>
-                                <option value="breakeven">تعادل</option>
-                            </select>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">من التاريخ</label>
+                                <input type="date" id="filterDateFrom" onchange="filterTrades()"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">إلى التاريخ</label>
+                                <input type="date" id="filterDateTo" onchange="filterTrades()"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">الربح/الخسارة</label>
+                                <select id="filterProfitRange" onchange="filterTrades()"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">الكل</option>
+                                    <option value="positive">موجب فقط</option>
+                                    <option value="negative">سالب فقط</option>
+                                    <option value="0-50">0$ - 50$</option>
+                                    <option value="50-100">50$ - 100$</option>
+                                    <option value="100+">أكثر من 100$</option>
+                                </select>
+                            </div>
                         </div>
                         
-                        <div>
-                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">البحث</label>
-                            <input type="text" id="searchInput" onkeyup="filterTrades()"
-                                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                                placeholder="ابحث...">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">حجم اللوت (من)</label>
+                                <input type="number" id="filterLotSizeFrom" step="0.01" onchange="filterTrades()"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                    placeholder="0.01">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">حجم اللوت (إلى)</label>
+                                <input type="number" id="filterLotSizeTo" step="0.01" onchange="filterTrades()"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                    placeholder="1.00">
+                            </div>
                         </div>
                         
-                        <div class="flex items-end">
-                            <button onclick="clearFilters()" 
-                                class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
-                                <i class="fas fa-times ml-2"></i>مسح الفلاتر
-                            </button>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">البحث</label>
+                                <input type="text" id="searchInput" onkeyup="filterTrades()"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                    placeholder="ابحث في الزوج، السبب، الملاحظات...">
+                            </div>
+                            
+                            <div class="flex items-end">
+                                <button onclick="clearFilters()" 
+                                    class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mobile-button">
+                                    <i class="fas fa-times ml-2"></i>مسح الفلاتر
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Trades Table -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden mobile-card">
                     <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                         <h2 class="text-xl font-bold text-gray-900 dark:text-white">
                             <i class="fas fa-list ml-2 text-blue-600 dark:text-blue-400"></i>
@@ -507,6 +669,7 @@
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الحساب</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">التاريخ</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الزوج</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">النوع</th>
@@ -534,7 +697,7 @@
             <div id="statsSection" class="section hidden">
                 <!-- Stats Overview -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
                                 <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
@@ -548,7 +711,7 @@
                         </div>
                     </div>
                     
-                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
                                 <div class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
@@ -562,7 +725,7 @@
                         </div>
                     </div>
                     
-                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
                                 <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
@@ -576,7 +739,7 @@
                         </div>
                     </div>
                     
-                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
                                 <div class="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
@@ -593,7 +756,7 @@
                 
                 <!-- Detailed Stats -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
                             <i class="fas fa-balance-scale ml-2 text-blue-600 dark:text-blue-400"></i>
                             متوسط الربح والخسارة
@@ -614,7 +777,7 @@
                         </div>
                     </div>
                     
-                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
                             <i class="fas fa-chart-line ml-2 text-blue-600 dark:text-blue-400"></i>
                             أقصى القيم
@@ -632,8 +795,33 @@
                     </div>
                 </div>
                 
+                <!-- Account Performance -->
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6 mobile-card">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                        <i class="fas fa-wallet ml-2 text-blue-600 dark:text-blue-400"></i>
+                        أداء الحسابات
+                    </h3>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الحساب</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">النوع</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الرصيد الحالي</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الربح/الخسارة</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">عدد الصفقات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accountStatsBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
                 <!-- Pair Performance -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
                         <i class="fas fa-coins ml-2 text-blue-600 dark:text-blue-400"></i>
                         أداء الأزواج
@@ -659,6 +847,69 @@
             </div>
         </main>
     </div>
+    
+    <!-- Add Account Modal -->
+    <div id="addAccountModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                <i class="fas fa-plus-circle ml-2 text-blue-600 dark:text-blue-400"></i>
+                إضافة حساب جديد
+            </h2>
+            
+            <form id="accountForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
+                        <i class="fas fa-tag ml-2"></i>اسم الحساب
+                    </label>
+                    <input type="text" id="accountName" required
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="مثال: حساب حقيقي">
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
+                        <i class="fas fa-coins ml-2"></i>الرصيد الأولي ($)
+                    </label>
+                    <input type="number" id="initialBalance" step="0.01" required
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="1000.00">
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
+                        <i class="fas fa-info-circle ml-2"></i>نوع الحساب
+                    </label>
+                    <select id="accountType" required
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                        <option value="">اختر النوع</option>
+                        <option value="real">حقيقي</option>
+                        <option value="demo">ديمو</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
+                        <i class="fas fa-broker ml-2"></i>الوسيط (اختياري)
+                    </label>
+                    <input type="text" id="broker"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="مثال: XM, IC Markets">
+                </div>
+                
+                <div class="flex justify-end space-x-4 space-x-reverse">
+                    <button type="button" onclick="hideAddAccountModal()"
+                        class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                        إلغاء
+                    </button>
+                    <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                        <i class="fas fa-save ml-2"></i>حفظ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <script>
         // Firebase Configuration
         const firebaseConfig = {
@@ -679,6 +930,8 @@
         // Global variables
         let currentUser = null;
         let trades = [];
+        let accounts = [];
+        let currentAccountId = null;
         let currentSection = 'dashboard';
         let performanceChart = null;
         
@@ -693,7 +946,7 @@
                     if (user) {
                         currentUser = user;
                         document.getElementById('currentUser').textContent = user.email;
-                        await loadUserTrades();
+                        await loadUserData();
                         showMainApp();
                     } else {
                         showAuthScreen();
@@ -730,6 +983,73 @@
             
             // Trade form
             document.getElementById('tradeForm').addEventListener('submit', handleAddTrade);
+            
+            // Account form
+            document.getElementById('accountForm').addEventListener('submit', handleAddAccount);
+        }
+        
+        // Load user data
+        async function loadUserData() {
+            try {
+                // Load accounts
+                const accountsSnapshot = await db.collection('accounts')
+                    .where('userId', '==', currentUser.uid)
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                
+                accounts = [];
+                accountsSnapshot.forEach(doc => {
+                    accounts.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Set default account if none selected
+                if (accounts.length > 0 && !currentAccountId) {
+                    currentAccountId = accounts[0].id;
+                }
+                
+                // Load trades
+                await loadUserTrades();
+                
+                // Update UI
+                updateAccountsList();
+                updateAccountSelects();
+                updateCurrentAccount();
+                updateDashboard();
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+        
+        // Load user trades
+        async function loadUserTrades() {
+            try {
+                let query = db.collection('trades')
+                    .where('userId', '==', currentUser.uid);
+                
+                // Filter by current account if selected
+                if (currentAccountId) {
+                    query = query.where('accountId', '==', currentAccountId);
+                }
+                
+                const snapshot = await query.orderBy('date', 'desc').get();
+                
+                trades = [];
+                snapshot.forEach(doc => {
+                    trades.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Update account balances
+                updateAccountBalances();
+            } catch (error) {
+                console.error('Error loading trades:', error);
+                trades = [];
+            }
         }
         
         // Authentication functions
@@ -810,6 +1130,8 @@
             auth.signOut().then(() => {
                 currentUser = null;
                 trades = [];
+                accounts = [];
+                currentAccountId = null;
                 showAuthScreen();
             }).catch((error) => {
                 console.error('Logout error:', error);
@@ -846,28 +1168,6 @@
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('mainApp').classList.remove('hidden');
             showSection('dashboard');
-            updateFilterOptions();
-        }
-        
-        // Load user trades
-        async function loadUserTrades() {
-            try {
-                const snapshot = await db.collection('trades')
-                    .where('userId', '==', currentUser.uid)
-                    .orderBy('date', 'desc')
-                    .get();
-                
-                trades = [];
-                snapshot.forEach(doc => {
-                    trades.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
-                });
-            } catch (error) {
-                console.error('Error loading trades:', error);
-                trades = [];
-            }
         }
         
         // Navigation
@@ -904,10 +1204,220 @@
             // Update section specific content
             if (section === 'dashboard') {
                 updateDashboard();
+            } else if (section === 'accounts') {
+                updateAccountsList();
             } else if (section === 'trades') {
                 displayTrades();
             } else if (section === 'stats') {
                 updateStats();
+            }
+        }
+        
+        // Account Management
+        function showAddAccountModal() {
+            document.getElementById('addAccountModal').classList.remove('hidden');
+            document.getElementById('accountForm').reset();
+        }
+        
+        function hideAddAccountModal() {
+            document.getElementById('addAccountModal').classList.add('hidden');
+        }
+        
+        async function handleAddAccount(e) {
+            e.preventDefault();
+            
+            const account = {
+                userId: currentUser.uid,
+                name: document.getElementById('accountName').value,
+                initialBalance: parseFloat(document.getElementById('initialBalance').value),
+                currentBalance: parseFloat(document.getElementById('initialBalance').value),
+                type: document.getElementById('accountType').value,
+                broker: document.getElementById('broker').value,
+                createdAt: new Date().toISOString()
+            };
+            
+            try {
+                const docRef = await db.collection('accounts').add(account);
+                account.id = docRef.id;
+                accounts.unshift(account);
+                
+                // Set as current account if none selected
+                if (!currentAccountId) {
+                    currentAccountId = account.id;
+                    await loadUserTrades();
+                }
+                
+                hideAddAccountModal();
+                updateAccountsList();
+                updateAccountSelects();
+                updateCurrentAccount();
+                showNotification('تم إضافة الحساب بنجاح!', 'success');
+            } catch (error) {
+                console.error('Error adding account:', error);
+                showNotification('حدث خطأ في إضافة الحساب', 'error');
+            }
+        }
+        
+        function selectAccount(accountId) {
+            currentAccountId = accountId;
+            loadUserTrades();
+            updateCurrentAccount();
+            updateDashboard();
+            
+            // Update active state
+            document.querySelectorAll('.account-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            document.querySelector(`[data-account-id="${accountId}"]`).classList.add('active');
+        }
+        
+        function updateAccountsList() {
+            const container = document.getElementById('accountsList');
+            
+            if (accounts.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fas fa-wallet text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500 dark:text-gray-400">لا توجد حسابات بعد</p>
+                        <button onclick="showAddAccountModal()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                            <i class="fas fa-plus ml-2"></i>إضافة حساب جديد
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = accounts.map(account => `
+                <div class="account-card bg-white dark:bg-gray-800 shadow rounded-lg p-6 ${account.id === currentAccountId ? 'active' : ''}" 
+                     data-account-id="${account.id}" onclick="selectAccount('${account.id}')">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">${account.name}</h3>
+                            <span class="inline-block px-2 py-1 text-xs rounded-full ${
+                                account.type === 'real' 
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                    : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                            }">
+                                ${account.type === 'real' ? 'حقيقي' : 'ديمو'}
+                            </span>
+                        </div>
+                        <div class="text-left">
+                            <button onclick="event.stopPropagation(); deleteAccount('${account.id}')" 
+                                    class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">الرصيد الحالي:</span>
+                            <span class="font-bold text-gray-900 dark:text-white">$${account.currentBalance.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">الرصيد الأولي:</span>
+                            <span class="text-gray-900 dark:text-gray-300">$${account.initialBalance.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">الربح/الخسارة:</span>
+                            <span class="font-bold ${account.currentBalance >= account.initialBalance ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+                                ${account.currentBalance >= account.initialBalance ? '+' : ''}$${(account.currentBalance - account.initialBalance).toFixed(2)}
+                            </span>
+                        </div>
+                        ${account.broker ? `
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">الوسيط:</span>
+                                <span class="text-gray-900 dark:text-gray-300">${account.broker}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function updateAccountSelects() {
+            const selects = ['tradeAccount', 'filterAccount'];
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                const currentValue = select.value;
+                
+                select.innerHTML = '<option value="">اختر الحساب</option>' + 
+                    accounts.map(account => `<option value="${account.id}">${account.name}</option>`).join('');
+                
+                // Restore previous selection
+                if (currentValue && accounts.find(a => a.id === currentValue)) {
+                    select.value = currentValue;
+                }
+            });
+        }
+        
+        function updateCurrentAccount() {
+            const account = accounts.find(a => a.id === currentAccountId);
+            
+            if (account) {
+                document.getElementById('currentAccountName').textContent = account.name;
+                document.getElementById('currentAccountBalance').textContent = `$${account.currentBalance.toFixed(2)}`;
+                document.getElementById('currentAccountType').textContent = account.type === 'real' ? 'حقيقي' : 'ديمو';
+                document.getElementById('currentAccountType').className = `px-3 py-1 rounded-full text-sm ${
+                    account.type === 'real' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                        : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                }`;
+            } else {
+                document.getElementById('currentAccountName').textContent = 'اختر حساب';
+                document.getElementById('currentAccountBalance').textContent = '$0.00';
+                document.getElementById('currentAccountType').textContent = '--';
+                document.getElementById('currentAccountType').className = 'px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+            }
+        }
+        
+        function updateAccountBalances() {
+            accounts.forEach(account => {
+                const accountTrades = trades.filter(t => t.accountId === account.id);
+                const totalPL = accountTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+                account.currentBalance = account.initialBalance + totalPL;
+            });
+        }
+        
+        async function deleteAccount(accountId) {
+            if (confirm('هل أنت متأكد من حذف هذا الحساب؟ سيتم حذف جميع الصفقات المرتبطة به.')) {
+                try {
+                    // Delete account
+                    await db.collection('accounts').doc(accountId).delete();
+                    
+                    // Delete related trades
+                    const tradesSnapshot = await db.collection('trades')
+                        .where('accountId', '==', accountId)
+                        .get();
+                    
+                    const batch = db.batch();
+                    tradesSnapshot.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+                    
+                    // Update local data
+                    accounts = accounts.filter(a => a.id !== accountId);
+                    trades = trades.filter(t => t.accountId !== accountId);
+                    
+                    // Set new current account if needed
+                    if (currentAccountId === accountId && accounts.length > 0) {
+                        currentAccountId = accounts[0].id;
+                    } else if (accounts.length === 0) {
+                        currentAccountId = null;
+                    }
+                    
+                    // Update UI
+                    updateAccountsList();
+                    updateAccountSelects();
+                    updateCurrentAccount();
+                    updateDashboard();
+                    showNotification('تم حذف الحساب', 'info');
+                } catch (error) {
+                    console.error('Error deleting account:', error);
+                    showNotification('حدث خطأ في حذف الحساب', 'error');
+                }
             }
         }
         
@@ -916,6 +1426,12 @@
             e.preventDefault();
             
             const saveBtn = document.getElementById('saveTradeBtn');
+            const accountId = document.getElementById('tradeAccount').value;
+            
+            if (!accountId) {
+                showNotification('الرجاء اختيار حساب', 'error');
+                return;
+            }
             
             // Show loading
             saveBtn.innerHTML = '<span class="loading-spinner"></span> جاري الحفظ...';
@@ -923,6 +1439,7 @@
             
             const trade = {
                 userId: currentUser.uid,
+                accountId: accountId,
                 pair: document.getElementById('pair').value,
                 type: document.getElementById('type').value,
                 entryPrice: parseFloat(document.getElementById('entryPrice').value),
@@ -940,6 +1457,10 @@
                 const docRef = await db.collection('trades').add(trade);
                 trade.id = docRef.id;
                 trades.unshift(trade);
+                
+                // Update account balance
+                updateAccountBalances();
+                await updateAccountBalanceInDB(accountId);
                 
                 // Reset form
                 document.getElementById('tradeForm').reset();
@@ -964,11 +1485,26 @@
             }
         }
         
+        async function updateAccountBalanceInDB(accountId) {
+            const account = accounts.find(a => a.id === accountId);
+            if (account) {
+                await db.collection('accounts').doc(accountId).update({
+                    currentBalance: account.currentBalance
+                });
+            }
+        }
+        
         async function deleteTrade(id) {
             if (confirm('هل أنت متأكد من حذف هذه الصفقة؟')) {
                 try {
+                    const trade = trades.find(t => t.id === id);
                     await db.collection('trades').doc(id).delete();
                     trades = trades.filter(t => t.id !== id);
+                    
+                    // Update account balance
+                    updateAccountBalances();
+                    await updateAccountBalanceInDB(trade.accountId);
+                    
                     displayTrades();
                     updateDashboard();
                     showNotification('تم حذف الصفقة', 'info');
@@ -1004,25 +1540,28 @@
             const tbody = document.getElementById('recentTradesBody');
             const recentTrades = trades.slice(0, 5);
             
-            tbody.innerHTML = recentTrades.map(trade => `
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">${trade.date}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${trade.pair}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${trade.type === 'Buy' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}">
-                            ${trade.type === 'Buy' ? 'شراء' : 'بيع'}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${trade.result === 'profit' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : trade.result === 'loss' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'}">
-                            ${trade.result === 'profit' ? 'ربح' : trade.result === 'loss' ? 'خسارة' : 'تعادل'}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${trade.profitLoss >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
-                        ${trade.profitLoss >= 0 ? '+' : ''}$${trade.profitLoss.toFixed(2)}
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = recentTrades.map(trade => {
+                const account = accounts.find(a => a.id === trade.accountId);
+                return `
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">${trade.date}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${trade.pair}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${trade.type === 'Buy' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}">
+                                ${trade.type === 'Buy' ? 'شراء' : 'بيع'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${trade.result === 'profit' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : trade.result === 'loss' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'}">
+                                ${trade.result === 'profit' ? 'ربح' : trade.result === 'loss' ? 'خسارة' : 'تعادل'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${trade.profitLoss >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+                            ${trade.profitLoss >= 0 ? '+' : ''}$${trade.profitLoss.toFixed(2)}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
         
         function updatePerformanceChart() {
@@ -1109,6 +1648,98 @@
             });
         }
         
+        // Search and filtering
+        function toggleSearchPanel() {
+            const panel = document.getElementById('searchPanel');
+            const icon = document.getElementById('searchToggleIcon');
+            
+            if (panel.classList.contains('collapsed')) {
+                panel.classList.remove('collapsed');
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                panel.classList.add('collapsed');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            }
+        }
+        
+        function getFilteredTrades() {
+            const accountFilter = document.getElementById('filterAccount').value;
+            const pairFilter = document.getElementById('filterPair').value;
+            const resultFilter = document.getElementById('filterResult').value;
+            const typeFilter = document.getElementById('filterType').value;
+            const dateFromFilter = document.getElementById('filterDateFrom').value;
+            const dateToFilter = document.getElementById('filterDateTo').value;
+            const profitRangeFilter = document.getElementById('filterProfitRange').value;
+            const lotSizeFromFilter = parseFloat(document.getElementById('filterLotSizeFrom').value) || 0;
+            const lotSizeToFilter = parseFloat(document.getElementById('filterLotSizeTo').value) || Infinity;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            return trades.filter(trade => {
+                // Account filter
+                const matchAccount = !accountFilter || trade.accountId === accountFilter;
+                
+                // Pair filter
+                const matchPair = !pairFilter || trade.pair === pairFilter;
+                
+                // Result filter
+                const matchResult = !resultFilter || trade.result === resultFilter;
+                
+                // Type filter
+                const matchType = !typeFilter || trade.type === typeFilter;
+                
+                // Date filters
+                const matchDateFrom = !dateFromFilter || trade.date >= dateFromFilter;
+                const matchDateTo = !dateToFilter || trade.date <= dateToFilter;
+                
+                // Profit range filter
+                let matchProfitRange = true;
+                if (profitRangeFilter === 'positive') {
+                    matchProfitRange = trade.profitLoss > 0;
+                } else if (profitRangeFilter === 'negative') {
+                    matchProfitRange = trade.profitLoss < 0;
+                } else if (profitRangeFilter === '0-50') {
+                    matchProfitRange = trade.profitLoss >= 0 && trade.profitLoss <= 50;
+                } else if (profitRangeFilter === '50-100') {
+                    matchProfitRange = trade.profitLoss > 50 && trade.profitLoss <= 100;
+                } else if (profitRangeFilter === '100+') {
+                    matchProfitRange = trade.profitLoss > 100;
+                }
+                
+                // Lot size filter
+                const matchLotSize = trade.lotSize >= lotSizeFromFilter && trade.lotSize <= lotSizeToFilter;
+                
+                // Search term
+                const matchSearch = !searchTerm || 
+                    trade.pair.toLowerCase().includes(searchTerm) ||
+                    trade.reason.toLowerCase().includes(searchTerm) ||
+                    (trade.notes && trade.notes.toLowerCase().includes(searchTerm));
+                
+                return matchAccount && matchPair && matchResult && matchType && 
+                       matchDateFrom && matchDateTo && matchProfitRange && 
+                       matchLotSize && matchSearch;
+            });
+        }
+        
+        function filterTrades() {
+            displayTrades();
+        }
+        
+        function clearFilters() {
+            document.getElementById('filterAccount').value = '';
+            document.getElementById('filterPair').value = '';
+            document.getElementById('filterResult').value = '';
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterDateFrom').value = '';
+            document.getElementById('filterDateTo').value = '';
+            document.getElementById('filterProfitRange').value = '';
+            document.getElementById('filterLotSizeFrom').value = '';
+            document.getElementById('filterLotSizeTo').value = '';
+            document.getElementById('searchInput').value = '';
+            displayTrades();
+        }
+        
         // Trades display
         function displayTrades() {
             const tbody = document.getElementById('tradesTableBody');
@@ -1124,68 +1755,58 @@
             
             document.getElementById('noTradesMessage').classList.add('hidden');
             
-            tbody.innerHTML = filteredTrades.map(trade => `
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">${trade.date}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${trade.pair}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${trade.type === 'Buy' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}">
-                            ${trade.type === 'Buy' ? 'شراء' : 'بيع'}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">${trade.entryPrice}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">${trade.reason}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${trade.result === 'profit' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : trade.result === 'loss' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'}">
-                            ${trade.result === 'profit' ? 'ربح' : trade.result === 'loss' ? 'خسارة' : 'تعادل'}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${trade.profitLoss >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
-                        ${trade.profitLoss >= 0 ? '+' : ''}$${trade.profitLoss.toFixed(2)}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button onclick="deleteTrade('${trade.id}')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = filteredTrades.map(trade => {
+                const account = accounts.find(a => a.id === trade.accountId);
+                return `
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                account?.type === 'real' 
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                    : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                            }">
+                                ${account?.name || 'غير معروف'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">${trade.date}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${trade.pair}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${trade.type === 'Buy' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}">
+                                ${trade.type === 'Buy' ? 'شراء' : 'بيع'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">${trade.entryPrice}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">${trade.reason}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${trade.result === 'profit' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : trade.result === 'loss' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'}">
+                                ${trade.result === 'profit' ? 'ربح' : trade.result === 'loss' ? 'خسارة' : 'تعادل'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${trade.profitLoss >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+                            ${trade.profitLoss >= 0 ? '+' : ''}$${trade.profitLoss.toFixed(2)}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="deleteTrade('${trade.id}')" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
         
-        // Filtering
+        // Update filter options
         function updateFilterOptions() {
+            // Update pair filter
             const pairs = [...new Set(trades.map(t => t.pair))].sort();
-            const select = document.getElementById('filterPair');
-            select.innerHTML = '<option value="">الكل</option>' + 
+            const pairSelect = document.getElementById('filterPair');
+            pairSelect.innerHTML = '<option value="">الكل</option>' + 
                 pairs.map(pair => `<option value="${pair}">${pair}</option>`).join('');
-        }
-        
-        function getFilteredTrades() {
-            const pairFilter = document.getElementById('filterPair').value;
-            const resultFilter = document.getElementById('filterResult').value;
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             
-            return trades.filter(trade => {
-                const matchPair = !pairFilter || trade.pair === pairFilter;
-                const matchResult = !resultFilter || trade.result === resultFilter;
-                const matchSearch = !searchTerm || 
-                    trade.pair.toLowerCase().includes(searchTerm) ||
-                    trade.reason.toLowerCase().includes(searchTerm) ||
-                    (trade.notes && trade.notes.toLowerCase().includes(searchTerm));
-                
-                return matchPair && matchResult && matchSearch;
-            });
-        }
-        
-        function filterTrades() {
-            displayTrades();
-        }
-        
-        function clearFilters() {
-            document.getElementById('filterPair').value = '';
-            document.getElementById('filterResult').value = '';
-            document.getElementById('searchInput').value = '';
-            displayTrades();
+            // Update account filter
+            const accountSelect = document.getElementById('filterAccount');
+            accountSelect.innerHTML = '<option value="">الكل</option>' + 
+                accounts.map(account => `<option value="${account.id}">${account.name}</option>`).join('');
         }
         
         // Statistics
@@ -1220,8 +1841,56 @@
             document.getElementById('maxProfit').textContent = '$' + maxProfit.toFixed(2);
             document.getElementById('maxLoss').textContent = '$' + Math.abs(maxLoss).toFixed(2);
             
+            // Account performance
+            updateAccountStats();
+            
             // Pair performance
             updatePairStats();
+        }
+        
+        function updateAccountStats() {
+            const tbody = document.getElementById('accountStatsBody');
+            
+            const accountStats = {};
+            accounts.forEach(account => {
+                const accountTrades = trades.filter(t => t.accountId === account.id);
+                const totalPL = accountTrades.reduce((sum, t) => sum + t.profitLoss, 0);
+                
+                accountStats[account.id] = {
+                    name: account.name,
+                    type: account.type,
+                    currentBalance: account.currentBalance,
+                    totalPL: totalPL,
+                    tradeCount: accountTrades.length
+                };
+            });
+            
+            tbody.innerHTML = Object.entries(accountStats)
+                .sort((a, b) => b[1].currentBalance - a[1].currentBalance)
+                .map(([accountId, stats]) => `
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                            <div class="flex items-center">
+                                ${stats.name}
+                                <span class="mr-2 px-2 py-1 text-xs rounded-full ${
+                                    stats.type === 'real' 
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                        : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                }">
+                                    ${stats.type === 'real' ? 'حقيقي' : 'ديمو'}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">${stats.type === 'real' ? 'حقيقي' : 'ديمو'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${stats.currentBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+                            $${stats.currentBalance.toFixed(2)}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${stats.totalPL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+                            ${stats.totalPL >= 0 ? '+' : ''}$${stats.totalPL.toFixed(2)}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">${stats.tradeCount}</td>
+                    </tr>
+                `).join('');
         }
         
         function updatePairStats() {
@@ -1261,20 +1930,24 @@
         // Export data
         function exportData() {
             const csvContent = [
-                ['التاريخ', 'الزوج', 'النوع', 'نقطة الدخول', 'وقف الخسارة', 'جني الأرباح', 'حجم اللوت', 'السبب', 'النتيجة', 'الربح/الخسارة', 'ملاحظات'],
-                ...trades.map(trade => [
-                    trade.date,
-                    trade.pair,
-                    trade.type === 'Buy' ? 'شراء' : 'بيع',
-                    trade.entryPrice,
-                    trade.stopLoss || '',
-                    trade.takeProfit || '',
-                    trade.lotSize,
-                    trade.reason,
-                    trade.result === 'profit' ? 'ربح' : trade.result === 'loss' ? 'خسارة' : 'تعادل',
-                    trade.profitLoss,
-                    trade.notes || ''
-                ])
+                ['الحساب', 'التاريخ', 'الزوج', 'النوع', 'نقطة الدخول', 'وقف الخسارة', 'جني الأرباح', 'حجم اللوت', 'السبب', 'النتيجة', 'الربح/الخسارة', 'ملاحظات'],
+                ...trades.map(trade => {
+                    const account = accounts.find(a => a.id === trade.accountId);
+                    return [
+                        account?.name || '',
+                        trade.date,
+                        trade.pair,
+                        trade.type === 'Buy' ? 'شراء' : 'بيع',
+                        trade.entryPrice,
+                        trade.stopLoss || '',
+                        trade.takeProfit || '',
+                        trade.lotSize,
+                        trade.reason,
+                        trade.result === 'profit' ? 'ربح' : trade.result === 'loss' ? 'خسارة' : 'تعادل',
+                        trade.profitLoss,
+                        trade.notes || ''
+                    ];
+                })
             ].map(row => row.join(',')).join('\n');
             
             const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
