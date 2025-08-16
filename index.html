@@ -159,15 +159,28 @@
             z-index: 10;
         }
 
-        .score {
-            font-size: 1.5rem;
+        .score-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2rem;
+        }
+
+        .match-score {
+            font-size: 1.2rem;
             font-weight: bold;
-            padding: 0.5rem 1rem;
+            padding: 0.3rem 0.8rem;
             background: var(--button-bg);
-            border-radius: 10px;
+            border-radius: 8px;
             box-shadow: 
-                3px 3px 6px var(--shadow-dark),
-                -3px -3px 6px var(--shadow-light);
+                2px 2px 4px var(--shadow-dark),
+                -2px -2px 4px var(--shadow-light);
+        }
+
+        .wins-score {
+            font-size: 0.9rem;
+            color: var(--primary-color);
+            font-weight: 600;
         }
 
         .game-controls {
@@ -484,7 +497,10 @@
     <div id="gameScreen" class="screen">
         <div class="game-container">
             <div class="game-header">
-                <div class="score" id="scoreDisplay">0 : 0</div>
+                <div class="score-container">
+                    <div class="match-score" id="scoreDisplay">0 : 0</div>
+                    <div class="wins-score" id="winsDisplay">الانتصارات: 0 - 0</div>
+                </div>
                 <div class="game-controls">
                     <button class="icon-btn" id="pauseBtn" onclick="togglePause()" aria-label="إيقاف مؤقت">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -518,7 +534,7 @@
             </div>
 
             <div class="setting-group">
-                <label class="setting-label">نقطة الفوز</label>
+                <label class="setting-label">نقاط الفوز في المباراة</label>
                 <select class="setting-control" id="winScore" onchange="updateSettings()">
                     <option value="5">5 نقاط</option>
                     <option value="7">7 نقاط</option>
@@ -572,6 +588,11 @@
             <h2 class="howto-title">كيفية اللعب</h2>
             
             <div class="howto-section">
+                <h3>الهدف</h3>
+                <p>اربح 10 مباريات للفوز النهائي! كل مباراة تنتهي عند وصول أحد اللاعبين إلى عدد النقاط المحدد. الفائز في كل مباراة يحصل على نقطة في العداد العام.</p>
+            </div>
+
+            <div class="howto-section">
                 <h3>على الهاتف</h3>
                 <p>اسحب بإصبعك لأعلى أو لأسفل في نصف الشاشة الخاص بك لتحريك المضرب. اللاعب الأيسر يستخدم النصف الأيسر، واللاعب الأيمن يستخدم النصف الأيمن.</p>
             </div>
@@ -579,11 +600,6 @@
             <div class="howto-section">
                 <h3>على الكمبيوتر</h3>
                 <p>استخدم الأسهم ↑ ↓ للتحكم بالمضرب الأيسر، و W/S للتحكم بالمضرب الأيمن.</p>
-            </div>
-
-            <div class="howto-section">
-                <h3>الهدف</h3>
-                <p>اربح النقاط عن طريق إرسال الكرة إلى خارج حدود الخصم. أول لاعب يصل إلى عدد النقاط المحدد يفوز.</p>
             </div>
 
             <div class="howto-section">
@@ -604,7 +620,7 @@
             <div class="victory-message" id="victoryMessage">تهانينا على فوزك!</div>
             <div class="victory-score" id="victoryScore">النتيجة: 0 - 0</div>
             <div class="mode-buttons">
-                <button class="btn" onclick="restartGame()">إعادة اللعب</button>
+                <button class="btn" onclick="continueGame()">متابعة اللعب</button>
                 <button class="btn" onclick="showScreen('mainMenu')">القائمة الرئيسية</button>
             </div>
         </div>
@@ -623,18 +639,19 @@
             BALL_SPEED: 5,
             BALL_ACCELERATION: 0.001,
             MAX_BALL_SPEED: 15,
-            AI_EASY_SPEED: 12,       // زيادة كبيرة في السرعة
-            AI_MEDIUM_SPEED: 15,     // زيادة كبيرة في السرعة
-            AI_HARD_SPEED: 18,       // زيادة كبيرة في السرعة
+            AI_EASY_SPEED: 6,        // تقليل سرعة البوت
+            AI_MEDIUM_SPEED: 8,      // تقليل سرعة البوت
+            AI_HARD_SPEED: 10,       // تقليل سرعة البوت
             WIN_SCORES: [5, 7, 10, 11],
-            DEFAULT_WIN_SCORE: 10,   // تغيير الافتراضي إلى 10
+            DEFAULT_WIN_SCORE: 10,
             DEFAULT_DIFFICULTY: 'medium',
             DEFAULT_SOUND_ENABLED: true,
             DEFAULT_VIBRATION_ENABLED: true,
             DEFAULT_SHOW_FPS: false,
             DEFAULT_TILT_CONTROL: false,
             DEFAULT_DARK_MODE: false,
-            DEFAULT_GAME_SPEED: 1
+            DEFAULT_GAME_SPEED: 1,
+            FINAL_WIN_SCORE: 10      // عدد الانتصارات للفوز النهائي
         };
 
         // ===== GAME STATE =====
@@ -652,6 +669,8 @@
             running: false,
             leftScore: 0,
             rightScore: 0,
+            leftWins: 0,          // عدد انتصارات اللاعب الأيسر
+            rightWins: 0,         // عدد انتصارات اللاعب الأيمن
             lastWinner: null,
             stats: {
                 singleWins: 0,
@@ -679,7 +698,7 @@
             update() {
                 // Smooth movement towards target
                 const diff = this.targetY - this.y;
-                this.y += diff * 0.3; // زيادة سرعة الاستجابة
+                this.y += diff * 0.3;
 
                 // Keep paddle within bounds
                 this.y = Math.max(0, Math.min(canvasHeight - this.height, this.y));
@@ -774,6 +793,7 @@
             onScore(winner) {
                 gameState.lastWinner = winner;
                 updateScoreDisplay();
+                updateWinsDisplay();
                 
                 if (gameState.vibrationEnabled && navigator.vibrate) {
                     navigator.vibrate(100);
@@ -781,8 +801,9 @@
                 
                 playSound('score');
                 
+                // Check if match is won
                 if (gameState.leftScore >= gameState.winScore || gameState.rightScore >= gameState.winScore) {
-                    endGame();
+                    endMatch();
                 } else {
                     showToast(`${winner === 'left' ? 'اللاعب الأيسر' : 'اللاعب الأيمن'} سجل نقطة!`);
                     setTimeout(() => this.reset(), 1000);
@@ -820,19 +841,19 @@
 
             getErrorMargin() {
                 switch(this.difficulty) {
-                    case 'easy': return 20;    // تقليل هامش الخطأ
-                    case 'medium': return 10;  // تقليل هامش الخطأ
-                    case 'hard': return 3;     // تقليل هامش الخطأ
-                    default: return 10;
+                    case 'easy': return 40;    // زيادة هامش الخطأ
+                    case 'medium': return 25;  // زيادة هامش الخطأ
+                    case 'hard': return 15;   // زيادة هامش الخطأ
+                    default: return 25;
                 }
             }
 
             getPredictionAccuracy() {
                 switch(this.difficulty) {
-                    case 'easy': return 0.7;   // دقة تنبؤ 70%
-                    case 'medium': return 0.85; // دقة تنبؤ 85%
-                    case 'hard': return 0.95;  // دقة تنبؤ 95%
-                    default: return 0.85;
+                    case 'easy': return 0.5;   // تقليل دقة التنبؤ
+                    case 'medium': return 0.7;  // تقليل دقة التنبؤ
+                    case 'hard': return 0.85;  // تقليل دقة التنبؤ
+                    default: return 0.7;
                 }
             }
 
@@ -859,7 +880,7 @@
                     targetY = predictedY;
                 }
                 
-                // Add small error margin
+                // Add error margin
                 targetY += (Math.random() - 0.5) * this.errorMargin;
                 
                 // Move paddle directly to target (no smoothing for AI)
@@ -946,7 +967,7 @@
                 const touchData = this.touches.get('mouse');
                 if (touchData) {
                     touchData.x = e.clientX;
-                    touchData.y = e.clientY;
+                    touchData.y = touch.clientY;
                 }
             }
 
@@ -1119,6 +1140,7 @@
             
             // Update UI
             updateScoreDisplay();
+            updateWinsDisplay();
             updateSoundButton();
             
             // Handle window resize
@@ -1216,6 +1238,8 @@
             gameState.mode = mode;
             gameState.leftScore = 0;
             gameState.rightScore = 0;
+            gameState.leftWins = 0;
+            gameState.rightWins = 0;
             gameState.paused = false;
             gameState.running = true;
             
@@ -1232,47 +1256,110 @@
             showToast(`بدأت اللعبة في وضع ${mode === 'single' ? 'اللاعب الواحد' : 'لاعبين'}`);
         }
 
-        function endGame() {
+        function endMatch() {
             gameState.running = false;
             
-            // Update stats
-            if (gameState.mode === 'single') {
-                if (gameState.leftScore > gameState.rightScore) {
+            // Update wins
+            if (gameState.leftScore > gameState.rightScore) {
+                gameState.leftWins++;
+                if (gameState.mode === 'single') {
                     gameState.stats.singleWins++;
                 }
             } else {
-                if (gameState.leftScore > gameState.rightScore) {
-                    gameState.stats.twoPlayerWins++;
+                gameState.rightWins++;
+                if (gameState.mode === 'single') {
+                    // AI wins, but we don't track AI wins in stats
                 }
             }
             
             // Save stats
             Storage.save();
             
-            // Show victory screen with appropriate message
+            // Check for final victory
+            if (gameState.leftWins >= CONSTANTS.FINAL_WIN_SCORE || gameState.rightWins >= CONSTANTS.FINAL_WIN_SCORE) {
+                showFinalVictory();
+            } else {
+                showMatchVictory();
+            }
+        }
+
+        function showMatchVictory() {
             const victoryTitle = document.getElementById('victoryTitle');
             const victoryMessage = document.getElementById('victoryMessage');
             const victoryScore = document.getElementById('victoryScore');
             
-            victoryScore.textContent = `النتيجة: ${gameState.leftScore} - ${gameState.rightScore}`;
+            victoryScore.textContent = `نتيجة المباراة: ${gameState.leftScore} - ${gameState.rightScore}`;
             
             if (gameState.leftScore > gameState.rightScore) {
-                victoryTitle.textContent = 'فوز!';
+                victoryTitle.textContent = 'فوز بالمباراة!';
                 if (gameState.mode === 'single') {
-                    victoryMessage.textContent = 'أحسنت! لقد هزمت الذكاء الاصطناعي! 🎉';
+                    victoryMessage.textContent = `أحسنت! لقد فزت بهذه المباراة! (${gameState.leftWins} - ${gameState.rightWins}) 🎉`;
                 } else {
-                    victoryMessage.textContent = 'تهانينا للاعب الأيسر! 🏆';
+                    victoryMessage.textContent = `تهانينا للاعب الأيسر! (${gameState.leftWins} - ${gameState.rightWins}) 🏆`;
                 }
             } else {
-                victoryTitle.textContent = 'خسارة!';
+                victoryTitle.textContent = 'خسارة بالمباراة!';
                 if (gameState.mode === 'single') {
-                    victoryMessage.textContent = 'لقد فاز الذكاء الاصطناعي هذه المرة! حاول مرة أخرى 🤖';
+                    victoryMessage.textContent = `لقد فاز الذكاء الاصطناعي بهذه المباراة! (${gameState.leftWins} - ${gameState.rightWins}) حاول مرة أخرى 🤖`;
                 } else {
-                    victoryMessage.textContent = 'تهانينا للاعب الأيمن! 🏆';
+                    victoryMessage.textContent = `تهانينا للاعب الأيمن! (${gameState.leftWins} - ${gameState.rightWins}) 🏆`;
                 }
             }
             
             showScreen('victoryScreen');
+        }
+
+        function showFinalVictory() {
+            const victoryTitle = document.getElementById('victoryTitle');
+            const victoryMessage = document.getElementById('victoryMessage');
+            const victoryScore = document.getElementById('victoryScore');
+            
+            victoryScore.textContent = `النتيجة النهائية: ${gameState.leftWins} - ${gameState.rightWins} انتصارات`;
+            
+            if (gameState.leftWins > gameState.rightWins) {
+                victoryTitle.textContent = 'فوز نهائي! 🏆';
+                if (gameState.mode === 'single') {
+                    victoryMessage.textContent = 'مبروك! لقد هزمت الذكاء الاصطناعي وحققت الفوز النهائي! 🎉🎉🎉';
+                } else {
+                    victoryMessage.textContent = 'تهانينا للاعب الأيسر على الفوز النهائي! 🏆🏆🏆';
+                }
+            } else {
+                victoryTitle.textContent = 'خسارة نهائية! 😢';
+                if (gameState.mode === 'single') {
+                    victoryMessage.textContent = 'لقد فاز الذكاء الاصطناعي باللعبة النهائية! حاول مرة أخرى 🤖💔';
+                } else {
+                    victoryMessage.textContent = 'تهانينا للاعب الأيمن على الفوز النهائي! 🏆🏆🏆';
+                }
+            }
+            
+            // Change button text for final victory
+            document.querySelector('.mode-buttons .btn').textContent = 'لعبة جديدة';
+            
+            showScreen('victoryScreen');
+        }
+
+        function continueGame() {
+            // Reset match scores but keep wins
+            gameState.leftScore = 0;
+            gameState.rightScore = 0;
+            gameState.paused = false;
+            gameState.running = true;
+            
+            // Reset ball
+            ball.reset();
+            
+            // Update displays
+            updateScoreDisplay();
+            updateWinsDisplay();
+            
+            // Show game screen
+            showScreen('gameScreen');
+            
+            // Start game loop
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+            
+            showToast('بدأت مباراة جديدة!');
         }
 
         function restartGame() {
@@ -1302,6 +1389,11 @@
         function updateScoreDisplay() {
             document.getElementById('scoreDisplay').textContent = 
                 `${gameState.leftScore} : ${gameState.rightScore}`;
+        }
+
+        function updateWinsDisplay() {
+            document.getElementById('winsDisplay').textContent = 
+                `الانتصارات: ${gameState.leftWins} - ${gameState.rightWins}`;
         }
 
         function updateSoundButton() {
