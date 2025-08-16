@@ -2,866 +2,1432 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سجل التداول الشخصي</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ping Pong Mobile</title>
     <style>
+        /* ===== CONSTANTS & VARIABLES ===== */
+        :root {
+            --bg-gradient-start: #667eea;
+            --bg-gradient-end: #764ba2;
+            --bg-color: #f0f0f3;
+            --text-color: #333;
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --shadow-light: #ffffff;
+            --shadow-dark: #d1d1d1;
+            --paddle-color: #667eea;
+            --ball-color: #764ba2;
+            --ui-bg: #f0f0f3;
+            --button-bg: #e0e0e0;
+            --button-text: #333;
+            --border-radius: 20px;
+            --transition-speed: 0.3s;
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient-start: #1a1a2e;
+            --bg-gradient-end: #16213e;
+            --bg-color: #0f0f1e;
+            --text-color: #f0f0f3;
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --shadow-light: #2a2a3e;
+            --shadow-dark: #000000;
+            --paddle-color: #667eea;
+            --ball-color: #764ba2;
+            --ui-bg: #1a1a2e;
+            --button-bg: #2a2a3e;
+            --button-text: #f0f0f3;
+        }
+
+        /* ===== BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
-            font-family: 'Tahoma', 'Arial', sans-serif;
-        }
-        .fade-in {
-            animation: fadeIn 0.3s ease-in;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .slide-in {
-            animation: slideIn 0.3s ease-out;
-        }
-        @keyframes slideIn {
-            from { transform: translateX(-100%); }
-            to { transform: translateX(0); }
-        }
-        .chart-container {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
             position: relative;
-            height: 300px;
         }
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+
+        /* ===== SCREENS ===== */
+        .screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity var(--transition-speed) ease;
         }
-        .loading-spinner {
-            border: 3px solid rgba(255, 255, 255, 0.3);
+
+        .screen.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ===== MAIN MENU ===== */
+        .main-menu {
+            text-align: center;
+        }
+
+        .logo {
+            font-size: clamp(3rem, 10vw, 6rem);
+            font-weight: bold;
+            margin-bottom: 2rem;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            background: var(--button-bg);
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            box-shadow: 
+                5px 5px 10px var(--shadow-dark),
+                -5px -5px 10px var(--shadow-light);
+            color: var(--button-text);
+            font-weight: 600;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:active {
+            box-shadow: 
+                inset 3px 3px 6px var(--shadow-dark),
+                inset -3px -3px 6px var(--shadow-light);
+            transform: scale(0.98);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-icon {
+            width: 24px;
+            height: 24px;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+
+        /* ===== GAME SCREEN ===== */
+        .game-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .game-header {
+            background: var(--ui-bg);
+            padding: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .score {
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            background: var(--button-bg);
+            border-radius: 10px;
+            box-shadow: 
+                3px 3px 6px var(--shadow-dark),
+                -3px -3px 6px var(--shadow-light);
+        }
+
+        .game-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            border-top: 3px solid white;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-left: 10px;
+            background: var(--button-bg);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                3px 3px 6px var(--shadow-dark),
+                -3px -3px 6px var(--shadow-light);
+            transition: all var(--transition-speed) ease;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        .icon-btn:active {
+            box-shadow: 
+                inset 2px 2px 4px var(--shadow-dark),
+                inset -2px -2px 4px var(--shadow-light);
         }
-        /* Mobile improvements */
-        @media (max-width: 768px) {
-            .mobile-card {
-                padding: 1rem;
-                margin-bottom: 0.75rem;
-            }
-            .mobile-text {
-                font-size: 0.875rem;
-            }
-            .mobile-button {
-                padding: 0.5rem 1rem;
-                font-size: 0.875rem;
-            }
-            .mobile-nav {
-                bottom: 0;
-                position: fixed;
-                width: 100%;
-                z-index: 40;
-            }
-        }
-        /* Account cards */
-        .account-card {
-            transition: all 0.3s ease;
+
+        #gameCanvas {
+            flex: 1;
+            width: 100%;
+            touch-action: none;
             cursor: pointer;
         }
-        .account-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+
+        /* ===== SETTINGS SCREEN ===== */
+        .settings-container {
+            background: var(--ui-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 
+                10px 10px 20px var(--shadow-dark),
+                -10px -10px 20px var(--shadow-light);
+            overflow-y: auto;
+            max-height: 80vh;
         }
-        .account-card.active {
-            border: 2px solid #3B82F6;
+
+        .settings-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
         }
-        /* Search panel */
-        .search-panel {
+
+        .setting-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .setting-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .setting-control {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 10px;
+            border: none;
+            background: var(--button-bg);
+            box-shadow: 
+                inset 2px 2px 4px var(--shadow-dark),
+                inset -2px -2px 4px var(--shadow-light);
+            color: var(--button-text);
+            font-size: 1rem;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 0.5rem;
+            border-radius: 10px;
+            border: none;
+            background: var(--button-bg);
+            box-shadow: 
+                3px 3px 6px var(--shadow-dark),
+                -3px -3px 6px var(--shadow-light);
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            color: var(--button-text);
+        }
+
+        .toggle-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* ===== HOW TO PLAY ===== */
+        .howto-container {
+            background: var(--ui-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 
+                10px 10px 20px var(--shadow-dark),
+                -10px -10px 20px var(--shadow-light);
+        }
+
+        .howto-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .howto-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .howto-section h3 {
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .howto-section p {
+            line-height: 1.6;
+        }
+
+        /* ===== GAME MODE SELECTION ===== */
+        .mode-selection {
+            background: var(--ui-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 
+                10px 10px 20px var(--shadow-dark),
+                -10px -10px 20px var(--shadow-light);
+            text-align: center;
+        }
+
+        .mode-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .mode-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* ===== VICTORY SCREEN ===== */
+        .victory-container {
+            background: var(--ui-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 
+                10px 10px 20px var(--shadow-dark),
+                -10px -10px 20px var(--shadow-light);
+            text-align: center;
+        }
+
+        .victory-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .victory-message {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--text-color);
+        }
+
+        .victory-score {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            font-weight: bold;
+        }
+
+        /* ===== TOAST/HINT ===== */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--ui-bg);
+            padding: 1rem 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: 
+                5px 5px 10px var(--shadow-dark),
+                -5px -5px 10px var(--shadow-light);
+            opacity: 0;
             transition: all 0.3s ease;
+            z-index: 1000;
         }
-        .search-panel.collapsed {
-            max-height: 60px;
-            overflow: hidden;
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* ===== FPS COUNTER ===== */
+        .fps-counter {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            display: none;
+        }
+
+        .fps-counter.show {
+            display: block;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 480px) {
+            .settings-container,
+            .howto-container,
+            .mode-selection,
+            .victory-container {
+                padding: 1.5rem;
+            }
+            
+            .logo {
+                font-size: 3rem;
+            }
+            
+            .btn {
+                padding: 0.8rem 1.5rem;
+                font-size: 1rem;
+            }
+        }
+
+        /* ===== ACCESSIBILITY ===== */
+        button:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+                animation: none !important;
+            }
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 min-h-screen transition-colors duration-300">
-    
-    <!-- Login/Register Screen -->
-    <div id="authScreen" class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md fade-in">
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mb-4">
-                    <i class="fas fa-chart-line text-white text-3xl"></i>
-                </div>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">سجل التداول</h1>
-                <p class="text-gray-600 dark:text-gray-400">تسجيل الدخول أو إنشاء حساب جديد</p>
-            </div>
-            
-            <!-- Owner Info -->
-            <div class="bg-blue-50 dark:bg-blue-900 rounded-lg p-4 mb-6 text-center">
-                <p class="text-sm text-blue-800 dark:text-blue-200">
-                    <i class="fas fa-user-tie ml-2"></i>
-                    <strong>المطور:</strong> سليمان
-                </p>
-                <a href="https://t.me/MPOIA" target="_blank" class="inline-flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mt-2">
-                    <i class="fab fa-telegram ml-2"></i>
-                    تلجرام المطور
-                </a>
-            </div>
-            
-            <div id="authError" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <i class="fas fa-exclamation-circle ml-2"></i>
-                <span id="authErrorText"></span>
-            </div>
-            
-            <!-- Login Form -->
-            <form id="loginForm" class="space-y-6">
-                <div>
-                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                        <i class="fas fa-envelope ml-2"></i>البريد الإلكتروني
-                    </label>
-                    <input type="email" id="loginEmail" required
-                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="أدخل بريدك الإلكتروني">
-                </div>
-                
-                <div>
-                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                        <i class="fas fa-lock ml-2"></i>كلمة المرور
-                    </label>
-                    <input type="password" id="loginPassword" required
-                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="أدخل كلمة المرور">
-                </div>
-                
-                <button type="submit" id="loginBtn"
-                    class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 transform hover:scale-105">
-                    <i class="fas fa-sign-in-alt ml-2"></i>تسجيل الدخول
+<body>
+    <!-- Main Menu Screen -->
+    <div id="mainMenu" class="screen active">
+        <div class="main-menu">
+            <h1 class="logo">PING PONG</h1>
+            <div class="menu-buttons">
+                <button class="btn" onclick="showScreen('modeSelection')" aria-label="ابدأ اللعبة">
+                    Play
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
                 </button>
-            </form>
-            
-            <div class="mt-6 text-center">
-                <button onclick="showRegisterForm()" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                    إنشاء حساب جديد
+                <button class="btn" onclick="showScreen('settings')" aria-label="الإعدادات">
+                    Settings
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m-7-3.5a7 7 0 0 0 7 7a7 7 0 0 0 7-7a7 7 0 0 0-7-7a7 7 0 0 0-7 7M12 2l1.39 1.39L12 4.78L10.61 3.39L12 2m0 19.22l1.39-1.39L12 18.61l-1.39 1.39L12 21.22M2 12l1.39-1.39L4.78 12l-1.39 1.39L2 12m19.22 0l-1.39 1.39L18.61 12l1.39-1.39L21.22 12M5.64 5.64l1.39 1.39L5.64 8.42L4.25 7.03L5.64 5.64m12.72 12.72l-1.39-1.39l1.39-1.39l1.39 1.39l-1.39 1.39M8.42 5.64L7.03 7.03l1.39 1.39l1.39-1.39L8.42 5.64m7.16 12.72l1.39-1.39l-1.39-1.39l-1.39 1.39l1.39 1.39z"/>
+                    </svg>
+                </button>
+                <button class="btn" onclick="showScreen('howToPlay')" aria-label="كيفية اللعب">
+                    How to Play
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M11 9h2V7h-2m1 13c-4.41 0-8-3.59-8-8s3.59-8 8-8s8 3.59 8 8s-3.59 8-8 8m0-18C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2m-1 15h2v-6h-2v6z"/>
+                    </svg>
                 </button>
             </div>
-            
-            <!-- Register Form (Hidden by default) -->
-            <form id="registerForm" class="hidden space-y-6 mt-6">
-                <div>
-                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                        <i class="fas fa-envelope ml-2"></i>البريد الإلكتروني
-                    </label>
-                    <input type="email" id="regEmail" required
-                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="أدخل بريدك الإلكتروني">
-                </div>
-                
-                <div>
-                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                        <i class="fas fa-lock ml-2"></i>كلمة المرور
-                    </label>
-                    <input type="password" id="regPassword" required
-                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="أدخل كلمة المرور (6 أحرف على الأقل)">
-                </div>
-                
-                <div>
-                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                        <i class="fas fa-lock ml-2"></i>تأكيد كلمة المرور
-                    </label>
-                    <input type="password" id="regPasswordConfirm" required
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="أعد إدخال كلمة المرور">
-                </div>
-                
-                <button type="submit" id="registerBtn"
-                    class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 transform hover:scale-105">
-                    <i class="fas fa-user-plus ml-2"></i>إنشاء حساب
+        </div>
+    </div>
+
+    <!-- Game Mode Selection -->
+    <div id="modeSelection" class="screen">
+        <div class="mode-selection">
+            <h2 class="mode-title">اختر وضع اللعب</h2>
+            <div class="mode-buttons">
+                <button class="btn" onclick="startGame('single')" aria-label="لعب ضد الكمبيوتر">
+                    Single Player (vs AI)
                 </button>
-                
-                <div class="mt-4 text-center">
-                    <button onclick="showLoginForm()" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                        لديك حساب بالفعل؟ تسجيل الدخول
+                <button class="btn" onclick="startGame('two')" aria-label="لعب لاعبين">
+                    Two Players
+                </button>
+                <button class="btn" onclick="showScreen('mainMenu')" aria-label="العودة للقائمة الرئيسية">
+                    Back
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen">
+        <div class="game-container">
+            <div class="game-header">
+                <div class="score" id="scoreDisplay">0 : 0</div>
+                <div class="game-controls">
+                    <button class="icon-btn" id="pauseBtn" onclick="togglePause()" aria-label="إيقاف مؤقت">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M14 19h4V5h-4m-6 14h4V5H8v14z"/>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" id="soundBtn" onclick="toggleSound()" aria-label="الصوت">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                        </svg>
                     </button>
                 </div>
-            </form>
+            </div>
+            <canvas id="gameCanvas"></canvas>
+            <div class="fps-counter" id="fpsCounter">60 FPS</div>
         </div>
     </div>
-    
-    <!-- Main App -->
-    <div id="mainApp" class="hidden">
-        <!-- Navigation -->
-        <nav class="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-chart-line text-2xl text-blue-600 dark:text-blue-400"></i>
-                        </div>
-                        <div class="hidden md:block">
-                            <div class="mr-10 flex items-baseline space-x-4 space-x-reverse">
-                                <button onclick="showSection('dashboard')" class="nav-btn text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
-                                    <i class="fas fa-home ml-2"></i>الرئيسية
-                                </button>
-                                <button onclick="showSection('accounts')" class="nav-btn text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
-                                    <i class="fas fa-wallet ml-2"></i>الحسابات
-                                </button>
-                                <button onclick="showSection('addTrade')" class="nav-btn text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
-                                    <i class="fas fa-plus ml-2"></i>إضافة صفقة
-                                </button>
-                                <button onclick="showSection('trades')" class="nav-btn text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
-                                    <i class="fas fa-list ml-2"></i>سجل الصفقات
-                                </button>
-                                <button onclick="showSection('stats')" class="nav-btn text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
-                                    <i class="fas fa-chart-bar ml-2"></i>الإحصائيات
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-4 space-x-reverse">
-                        <div class="text-sm text-gray-600 dark:text-gray-300">
-                            <i class="fas fa-user ml-2"></i>
-                            <span id="currentUser">المستخدم</span>
-                        </div>
-                        <button id="darkModeToggle" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                            <i class="fas fa-moon dark:hidden"></i>
-                            <i class="fas fa-sun hidden dark:inline"></i>
-                        </button>
-                        <button onclick="exportData()" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                            <i class="fas fa-download"></i>
-                        </button>
-                        <button onclick="logout()" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </button>
-                    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings" class="screen">
+        <div class="settings-container">
+            <h2 class="settings-title">الإعدادات</h2>
+            
+            <div class="setting-group">
+                <label class="setting-label">صعوبة الذكاء الاصطناعي</label>
+                <div class="toggle-group">
+                    <button class="toggle-btn" onclick="setDifficulty('easy')">سهل</button>
+                    <button class="toggle-btn" onclick="setDifficulty('medium')">متوسط</button>
+                    <button class="toggle-btn" onclick="setDifficulty('hard')">صعب</button>
                 </div>
             </div>
-        </nav>
-        
-        <!-- Mobile Navigation -->
-        <div class="md:hidden bg-white dark:bg-gray-800 shadow mobile-nav">
-            <div class="flex justify-around py-2">
-                <button onclick="showSection('dashboard')" class="nav-btn-mobile p-2 text-gray-600 dark:text-gray-300">
-                    <i class="fas fa-home text-xl"></i>
-                </button>
-                <button onclick="showSection('accounts')" class="nav-btn-mobile p-2 text-gray-600 dark:text-gray-300">
-                    <i class="fas fa-wallet text-xl"></i>
-                </button>
-                <button onclick="showSection('addTrade')" class="nav-btn-mobile p-2 text-gray-600 dark:text-gray-300">
-                    <i class="fas fa-plus text-xl"></i>
-                </button>
-                <button onclick="showSection('trades')" class="nav-btn-mobile p-2 text-gray-600 dark:text-gray-300">
-                    <i class="fas fa-list text-xl"></i>
-                </button>
-                <button onclick="showSection('stats')" class="nav-btn-mobile p-2 text-gray-600 dark:text-gray-300">
-                    <i class="fas fa-chart-bar text-xl"></i>
-                </button>
+
+            <div class="setting-group">
+                <label class="setting-label">نقطة الفوز</label>
+                <select class="setting-control" id="winScore" onchange="updateSettings()">
+                    <option value="5">5 نقاط</option>
+                    <option value="7">7 نقاط</option>
+                    <option value="10" selected>10 نقاط</option>
+                    <option value="11">11 نقطة</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">سرعة اللعبة</label>
+                <input type="range" class="setting-control" id="gameSpeed" min="0.5" max="2" step="0.1" value="1" onchange="updateSettings()">
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">التفضيلات</label>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="soundEnabled" onchange="updateSettings()">
+                        <span>تفعيل الصوت</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="vibrationEnabled" onchange="updateSettings()">
+                        <span>تفعيل الاهتزاز</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="showFps" onchange="updateSettings()">
+                        <span>عرض FPS</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="tiltControl" onchange="updateSettings()">
+                        <span>التحكم بالإمالة</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="darkMode" onchange="toggleTheme()">
+                        <span>الوضع الليلي</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <button class="btn" onclick="resetSettings()">إعادة التعيين</button>
+            </div>
+
+            <button class="btn" onclick="showScreen('mainMenu')">العودة</button>
+        </div>
+    </div>
+
+    <!-- How to Play Screen -->
+    <div id="howToPlay" class="screen">
+        <div class="howto-container">
+            <h2 class="howto-title">كيفية اللعب</h2>
+            
+            <div class="howto-section">
+                <h3>على الهاتف</h3>
+                <p>اسحب بإصبعك لأعلى أو لأسفل في نصف الشاشة الخاص بك لتحريك المضرب. اللاعب الأيسر يستخدم النصف الأيسر، واللاعب الأيمن يستخدم النصف الأيمن.</p>
+            </div>
+
+            <div class="howto-section">
+                <h3>على الكمبيوتر</h3>
+                <p>استخدم الأسهم ↑ ↓ للتحكم بالمضرب الأيسر، و W/S للتحكم بالمضرب الأيمن.</p>
+            </div>
+
+            <div class="howto-section">
+                <h3>الهدف</h3>
+                <p>اربح النقاط عن طريق إرسال الكرة إلى خارج حدود الخصم. أول لاعب يصل إلى عدد النقاط المحدد يفوز.</p>
+            </div>
+
+            <div class="howto-section">
+                <h3>نصائح</h3>
+                <p>• اصطدام الكرة بأطراف المضرب يغير زاويتها<br>
+                • تزداد سرعة الكرة تدريجياً مع الوقت<br>
+                • يمكنك إيقاف اللعبة مؤقتاً في أي وقت</p>
+            </div>
+
+            <button class="btn" onclick="showScreen('mainMenu')">العودة</button>
+        </div>
+    </div>
+
+    <!-- Victory Screen -->
+    <div id="victoryScreen" class="screen">
+        <div class="victory-container">
+            <h2 class="victory-title" id="victoryTitle">فوز!</h2>
+            <div class="victory-message" id="victoryMessage">تهانينا على فوزك!</div>
+            <div class="victory-score" id="victoryScore">النتيجة: 0 - 0</div>
+            <div class="mode-buttons">
+                <button class="btn" onclick="restartGame()">إعادة اللعب</button>
+                <button class="btn" onclick="showScreen('mainMenu')">القائمة الرئيسية</button>
             </div>
         </div>
-        
-        <!-- Main Content -->
-        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 mb-20 md:mb-0">
-            <!-- Dashboard Section -->
-            <div id="dashboardSection" class="section fade-in">
-                <!-- Welcome Card -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6 mobile-card">
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                        <i class="fas fa-home ml-2 text-blue-600 dark:text-blue-400"></i>
-                        مرحباً بك في سجل التداول الخاص بك
-                    </h1>
-                    <p class="text-gray-600 dark:text-gray-400">تتبع صفقاتك واحصل على رؤى قيمة لأدائك</p>
-                </div>
-                
-                <!-- Current Account Balance -->
-                <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg p-6 mb-6 text-white mobile-card">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-purple-100">الحساب الحالي</p>
-                            <p class="text-xl font-bold" id="currentAccountName">اختر حساب</p>
-                            <p class="text-3xl font-bold mt-2" id="currentAccountBalance">$0.00</p>
-                        </div>
-                        <div class="text-right">
-                            <span id="currentAccountType" class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm">
-                                --
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white mobile-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-blue-100 mobile-text">إجمالي الصفقات</p>
-                                <p class="text-3xl font-bold" id="totalTrades">0</p>
-                            </div>
-                            <i class="fas fa-chart-bar text-4xl text-blue-200"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white mobile-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-green-100 mobile-text">نسبة الربح</p>
-                                <p class="text-3xl font-bold" id="winRate">0%</p>
-                            </div>
-                            <i class="fas fa-percentage text-4xl text-green-200"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white mobile-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-purple-100 mobile-text">إجمالي الربح</p>
-                                <p class="text-3xl font-bold" id="totalProfit">$0</p>
-                            </div>
-                            <i class="fas fa-trophy text-4xl text-purple-200"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-6 text-white mobile-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-red-100 mobile-text">إجمالي الخسارة</p>
-                                <p class="text-3xl font-bold" id="totalLoss">$0</p>
-                            </div>
-                            <i class="fas fa-times-circle text-4xl text-red-200"></i>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Performance Chart -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6 mobile-card">
-                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                        <i class="fas fa-chart-line ml-2 text-blue-600 dark:text-blue-400"></i>
-                        أداء الشهور الستة الأخيرة
-                    </h2>
-                    <div class="chart-container">
-                        <canvas id="performanceChart"></canvas>
-                    </div>
-                </div>
-                
-                <!-- Recent Trades -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
-                            <i class="fas fa-history ml-2 text-blue-600 dark:text-blue-400"></i>
-                            آخر الصفقات
-                        </h2>
-                        <button onclick="showSection('trades')" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                            عرض الكل <i class="fas fa-arrow-left mr-1"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">التاريخ</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الزوج</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">النوع</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">النتيجة</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الربح/الخسارة</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recentTradesBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                <!-- Will be populated by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Accounts Section -->
-            <div id="accountsSection" class="section hidden">
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6 mobile-card">
-                    <div class="flex justify-between items-center mb-6">
-                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-                            <i class="fas fa-wallet ml-2 text-blue-600 dark:text-blue-400"></i>
-                            إدارة الحسابات
-                        </h1>
-                        <button onclick="showAddAccountModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mobile-button">
-                            <i class="fas fa-plus ml-2"></i>إضافة حساب
-                        </button>
-                    </div>
-                    
-                    <div id="accountsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <!-- Accounts will be populated by JavaScript -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Add Trade Section -->
-            <div id="addTradeSection" class="section hidden">
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                        <i class="fas fa-plus-circle ml-2 text-blue-600 dark:text-blue-400"></i>
-                        إضافة صفقة جديدة
-                    </h1>
-                    
-                    <!-- Account Selection -->
-                    <div class="mb-6">
-                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                            <i class="fas fa-wallet ml-2"></i>الحساب
-                        </label>
-                        <select id="tradeAccount" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                            <option value="">اختر الحساب</option>
-                        </select>
-                    </div>
-                    
-                    <form id="tradeForm" class="space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                                    <i class="fas fa-coins ml-2"></i>زوج العملة / الأداة
-                                </label>
-                                <input type="text" id="pair" required
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                                    placeholder="مثال: EUR/USD">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                                    <i class="fas fa-exchange-alt ml-2"></i>نوع الصفقة
-                                </label>
-                                <select id="type" required
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                    <option value="">اختر النوع</option>
-                                    <option value="Buy">شراء (Buy)</option>
-                                    <option value="Sell">بيع (Sell)</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                                    <i class="fas fa-tag ml-2"></i>نقطة الدخول
-                                </label>
-                                <input type="number" id="entryPrice" step="0.00001" required
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                                    placeholder="1.12345">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                                    <i class="fas fa-shield-alt ml-2"></i>وقف الخسارة
-                                </label>
-                                <input type="number" id="stopLoss" step="0.00001"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                                    placeholder="1.12000">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                                    <i class="fas fa-trophy ml-2"></i>جني الأرباح
-                                </label>
-                                <input type="number" id="takeProfit" step="0.00001"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                                    placeholder="1.13000">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                                    <i class="fas fa-weight ml-2"></i>حجم اللوت
-                                </label>
-                                <input type="number" id="lotSize" step="0.01" required
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                                    placeholder="0.10">
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                                <i class="fas fa-lightbulb ml-2"></i>سبب الدخول
-                            </label>
-                            <select id="reason" required
-                                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                <option value="">اختر السبب</option>
-                                <option value="تحليل فني">تحليل فني</option>
-                                <option value="تحليل أساسي">تحليل أساسي</option>
-                                <option value="خبر اقتصادي">خبر اقتصادي</option>
-                                <option value="استراتيجية">استراتيجية</option>
-                                <option value="أخرى">أخرى</option>
-                            </select>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                                    <i class="fas fa-flag-checkered ml-2"></i>النتيجة
-                                </label>
-                                <select id="result" required
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                    <option value="">اختر النتيجة</option>
-                                    <option value="profit">ربح</option>
-                                    <option value="loss">خسارة</option>
-                                    <option value="breakeven">تعادل</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                                    <i class="fas fa-dollar-sign ml-2"></i>قيمة الربح/الخسارة
-                                </label>
-                                <input type="number" id="profitLoss" step="0.01" required
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                                    placeholder="50.00">
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                                <i class="fas fa-sticky-note ml-2"></i>ملاحظات إضافية
-                            </label>
-                            <textarea id="notes" rows="4"
-                                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                                placeholder="أي ملاحظات تود إضافتها..."></textarea>
-                        </div>
-                        
-                        <div class="flex justify-end">
-                            <button type="submit" id="saveTradeBtn"
-                                class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 mobile-button">
-                                <i class="fas fa-save ml-2"></i>حفظ الصفقة
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            
-            <!-- Trades Section -->
-            <div id="tradesSection" class="section hidden">
-                <!-- Advanced Search Panel -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6 mobile-card search-panel" id="searchPanel">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
-                            <i class="fas fa-search ml-2 text-blue-600 dark:text-blue-400"></i>
-                            البحث المتقدم
-                        </h2>
-                        <button onclick="toggleSearchPanel()" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                            <i class="fas fa-chevron-down" id="searchToggleIcon"></i>
-                        </button>
-                    </div>
-                    
-                    <div id="searchContent">
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">الحساب</label>
-                                <select id="filterAccount" onchange="filterTrades()"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                    <option value="">الكل</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">الزوج</label>
-                                <select id="filterPair" onchange="filterTrades()"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                    <option value="">الكل</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">النتيجة</label>
-                                <select id="filterResult" onchange="filterTrades()"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                    <option value="">الكل</option>
-                                    <option value="profit">ربح</option>
-                                    <option value="loss">خسارة</option>
-                                    <option value="breakeven">تعادل</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">نوع الصفقة</label>
-                                <select id="filterType" onchange="filterTrades()"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                    <option value="">الكل</option>
-                                    <option value="Buy">شراء</option>
-                                    <option value="Sell">بيع</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">من التاريخ</label>
-                                <input type="date" id="filterDateFrom" onchange="filterTrades()"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">إلى التاريخ</label>
-                                <input type="date" id="filterDateTo" onchange="filterTrades()"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">الربح/الخسارة</label>
-                                <select id="filterProfitRange" onchange="filterTrades()"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                    <option value="">الكل</option>
-                                    <option value="positive">موجب فقط</option>
-                                    <option value="negative">سالب فقط</option>
-                                    <option value="0-50">0$ - 50$</option>
-                                    <option value="50-100">50$ - 100$</option>
-                                    <option value="100+">أكثر من 100$</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">حجم اللوت (من)</label>
-                                <input type="number" id="filterLotSizeFrom" step="0.01" onchange="filterTrades()"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                                    placeholder="0.01">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">حجم اللوت (إلى)</label>
-                                <input type="number" id="filterLotSizeTo" step="0.01" onchange="filterTrades()"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                                    placeholder="1.00">
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">البحث</label>
-                                <input type="text" id="searchInput" onkeyup="filterTrades()"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                                    placeholder="ابحث في الزوج، السبب، الملاحظات...">
-                            </div>
-                            
-                            <div class="flex items-end">
-                                <button onclick="clearFilters()" 
-                                    class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mobile-button">
-                                    <i class="fas fa-times ml-2"></i>مسح الفلاتر
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Trades Table -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden mobile-card">
-                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
-                            <i class="fas fa-list ml-2 text-blue-600 dark:text-blue-400"></i>
-                            سجل الصفقات
-                            <span class="text-sm font-normal text-gray-600 dark:text-gray-400 mr-2" id="tradesCount">(0 صفقة)</span>
-                        </h2>
-                    </div>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الحساب</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">التاريخ</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الزوج</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">النوع</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الدخول</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">السبب</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">النتيجة</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الربح/الخسارة</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tradesTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                <!-- Will be populated by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <div id="noTradesMessage" class="hidden text-center py-12">
-                        <i class="fas fa-inbox text-4xl text-gray-400 mb-4"></i>
-                        <p class="text-gray-500 dark:text-gray-400">لا توجد صفقات مطابقة للبحث</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Stats Section -->
-            <div id="statsSection" class="section hidden">
-                <!-- Stats Overview -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-chart-bar text-blue-600 dark:text-blue-400 text-xl"></i>
-                                </div>
-                            </div>
-                            <div class="mr-4">
-                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">إجمالي الصفقات</p>
-                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="statsTotalTrades">0</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <div class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-percentage text-green-600 dark:text-green-400 text-xl"></i>
-                                </div>
-                            </div>
-                            <div class="mr-4">
-                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">نسبة الربح</p>
-                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="statsWinRate">0%</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-trophy text-purple-600 dark:text-purple-400 text-xl"></i>
-                                </div>
-                            </div>
-                            <div class="mr-4">
-                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">صفقات رابحة</p>
-                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="statsWinningTrades">0</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <div class="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-times-circle text-red-600 dark:text-red-400 text-xl"></i>
-                                </div>
-                            </div>
-                            <div class="mr-4">
-                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">صفقات خاسرة</p>
-                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="statsLosingTrades">0</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Detailed Stats -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                            <i class="fas fa-balance-scale ml-2 text-blue-600 dark:text-blue-400"></i>
-                            متوسط الربح والخسارة
-                        </h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600 dark:text-gray-400">متوسط الربح للصفقة الرابحة:</span>
-                                <span class="text-green-600 dark:text-green-400 font-bold" id="avgWin">$0</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600 dark:text-gray-400">متوسط الخسارة للصفقة الخاسرة:</span>
-                                <span class="text-red-600 dark:text-red-400 font-bold" id="avgLoss">$0</span>
-                            </div>
-                            <div class="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
-                                <span class="text-gray-900 dark:text-white font-semibold">نسبة المخاطرة إلى العائد:</span>
-                                <span class="text-blue-600 dark:text-blue-400 font-bold" id="riskReward">N/A</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                            <i class="fas fa-chart-line ml-2 text-blue-600 dark:text-blue-400"></i>
-                            أقصى القيم
-                        </h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600 dark:text-gray-400">أكبر ربح:</span>
-                                <span class="text-green-600 dark:text-green-400 font-bold" id="maxProfit">$0</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600 dark:text-gray-400">أكبر خسارة:</span>
-                                <span class="text-red-600 dark:text-red-400 font-bold" id="maxLoss">$0</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Account Performance -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6 mobile-card">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                        <i class="fas fa-wallet ml-2 text-blue-600 dark:text-blue-400"></i>
-                        أداء الحسابات
-                    </h3>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الحساب</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">النوع</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الرصيد الحالي</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الربح/الخسارة</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">عدد الصفقات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="accountStatsBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                <!-- Will be populated by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Pair Performance -->
-                <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mobile-card">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                        <i class="fas fa-coins ml-2 text-blue-600 dark:text-blue-400"></i>
-                        أداء الأزواج
-                    </h3>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الزوج</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">عدد الصفقات</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">إجمالي الربح</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">إجمالي الخسارة</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">الصافي</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pairStatsBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                <!-- Will be populated by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </main>
     </div>
-    
-    <!-- Add Account Modal -->
-    <div id="addAccountModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                <i class="fas fa-plus-circle ml-2 text-blue-600 dark:text-blue-400"></i>
-                إضافة حساب جديد
-            </h2>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // ===== GAME CONSTANTS =====
+        const CONSTANTS = {
+            PADDLE_WIDTH: 15,
+            PADDLE_HEIGHT: 80,
+            PADDLE_SPEED: 8,
+            BALL_SIZE: 15,
+            BALL_SPEED: 5,
+            BALL_ACCELERATION: 0.001,
+            MAX_BALL_SPEED: 15,
+            AI_EASY_SPEED: 12,       // زيادة كبيرة في السرعة
+            AI_MEDIUM_SPEED: 15,     // زيادة كبيرة في السرعة
+            AI_HARD_SPEED: 18,       // زيادة كبيرة في السرعة
+            WIN_SCORES: [5, 7, 10, 11],
+            DEFAULT_WIN_SCORE: 10,   // تغيير الافتراضي إلى 10
+            DEFAULT_DIFFICULTY: 'medium',
+            DEFAULT_SOUND_ENABLED: true,
+            DEFAULT_VIBRATION_ENABLED: true,
+            DEFAULT_SHOW_FPS: false,
+            DEFAULT_TILT_CONTROL: false,
+            DEFAULT_DARK_MODE: false,
+            DEFAULT_GAME_SPEED: 1
+        };
+
+        // ===== GAME STATE =====
+        let gameState = {
+            mode: 'single', // 'single' or 'two'
+            difficulty: 'easy', // 'easy', 'medium', 'hard'
+            winScore: CONSTANTS.DEFAULT_WIN_SCORE,
+            gameSpeed: CONSTANTS.DEFAULT_GAME_SPEED,
+            soundEnabled: CONSTANTS.DEFAULT_SOUND_ENABLED,
+            vibrationEnabled: CONSTANTS.DEFAULT_VIBRATION_ENABLED,
+            showFps: CONSTANTS.DEFAULT_SHOW_FPS,
+            tiltControl: CONSTANTS.DEFAULT_TILT_CONTROL,
+            darkMode: CONSTANTS.DEFAULT_DARK_MODE,
+            paused: false,
+            running: false,
+            leftScore: 0,
+            rightScore: 0,
+            lastWinner: null,
+            stats: {
+                singleWins: 0,
+                twoPlayerWins: 0
+            }
+        };
+
+        // ===== CANVAS SETUP =====
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let canvasWidth, canvasHeight;
+
+        // ===== GAME OBJECTS =====
+        class Paddle {
+            constructor(x, y, isLeft = true) {
+                this.x = x;
+                this.y = y;
+                this.width = CONSTANTS.PADDLE_WIDTH;
+                this.height = CONSTANTS.PADDLE_HEIGHT;
+                this.speed = CONSTANTS.PADDLE_SPEED;
+                this.isLeft = isLeft;
+                this.targetY = y;
+            }
+
+            update() {
+                // Smooth movement towards target
+                const diff = this.targetY - this.y;
+                this.y += diff * 0.3; // زيادة سرعة الاستجابة
+
+                // Keep paddle within bounds
+                this.y = Math.max(0, Math.min(canvasHeight - this.height, this.y));
+            }
+
+            draw() {
+                ctx.fillStyle = gameState.darkMode ? '#667eea' : '#764ba2';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.shadowBlur = 0;
+            }
+
+            moveTo(y) {
+                this.targetY = y - this.height / 2;
+            }
+        }
+
+        class Ball {
+            constructor() {
+                this.reset();
+                this.size = CONSTANTS.BALL_SIZE;
+                this.speed = CONSTANTS.BALL_SPEED;
+                this.acceleration = CONSTANTS.BALL_ACCELERATION;
+            }
+
+            reset() {
+                this.x = canvasWidth / 2;
+                this.y = canvasHeight / 2;
+                this.vx = (Math.random() > 0.5 ? 1 : -1) * this.speed;
+                this.vy = (Math.random() - 0.5) * this.speed;
+                this.speed = CONSTANTS.BALL_SPEED;
+            }
+
+            update() {
+                this.x += this.vx * gameState.gameSpeed;
+                this.y += this.vy * gameState.gameSpeed;
+
+                // Accelerate ball
+                this.speed = Math.min(this.speed + this.acceleration, CONSTANTS.MAX_BALL_SPEED);
+
+                // Top and bottom collision
+                if (this.y - this.size/2 <= 0 || this.y + this.size/2 >= canvasHeight) {
+                    this.vy = -this.vy;
+                    playSound('wall');
+                }
+
+                // Paddle collision
+                if (this.checkPaddleCollision(leftPaddle) || this.checkPaddleCollision(rightPaddle)) {
+                    playSound('paddle');
+                }
+
+                // Score detection
+                if (this.x < 0) {
+                    gameState.rightScore++;
+                    this.onScore('right');
+                } else if (this.x > canvasWidth) {
+                    gameState.leftScore++;
+                    this.onScore('left');
+                }
+            }
+
+            checkPaddleCollision(paddle) {
+                if (this.x - this.size/2 < paddle.x + paddle.width &&
+                    this.x + this.size/2 > paddle.x &&
+                    this.y - this.size/2 < paddle.y + paddle.height &&
+                    this.y + this.size/2 > paddle.y) {
+                    
+                    // Calculate hit position (0 to 1)
+                    const hitPos = (this.y - paddle.y) / paddle.height;
+                    
+                    // Change angle based on hit position
+                    const angle = (hitPos - 0.5) * Math.PI / 3; // -60 to 60 degrees
+                    
+                    // Set new velocity
+                    const direction = paddle.isLeft ? 1 : -1;
+                    this.vx = Math.cos(angle) * this.speed * direction;
+                    this.vy = Math.sin(angle) * this.speed;
+                    
+                    // Prevent ball from getting stuck
+                    if (paddle.isLeft) {
+                        this.x = paddle.x + paddle.width + this.size/2;
+                    } else {
+                        this.x = paddle.x - this.size/2;
+                    }
+                    
+                    return true;
+                }
+                return false;
+            }
+
+            onScore(winner) {
+                gameState.lastWinner = winner;
+                updateScoreDisplay();
+                
+                if (gameState.vibrationEnabled && navigator.vibrate) {
+                    navigator.vibrate(100);
+                }
+                
+                playSound('score');
+                
+                if (gameState.leftScore >= gameState.winScore || gameState.rightScore >= gameState.winScore) {
+                    endGame();
+                } else {
+                    showToast(`${winner === 'left' ? 'اللاعب الأيسر' : 'اللاعب الأيمن'} سجل نقطة!`);
+                    setTimeout(() => this.reset(), 1000);
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = gameState.darkMode ? '#764ba2' : '#667eea';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size/2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        class AI {
+            constructor(paddle, difficulty) {
+                this.paddle = paddle;
+                this.difficulty = difficulty;
+                this.speed = this.getSpeed();
+                this.errorMargin = this.getErrorMargin();
+                this.predictionAccuracy = this.getPredictionAccuracy();
+            }
+
+            getSpeed() {
+                switch(this.difficulty) {
+                    case 'easy': return CONSTANTS.AI_EASY_SPEED;
+                    case 'medium': return CONSTANTS.AI_MEDIUM_SPEED;
+                    case 'hard': return CONSTANTS.AI_HARD_SPEED;
+                    default: return CONSTANTS.AI_MEDIUM_SPEED;
+                }
+            }
+
+            getErrorMargin() {
+                switch(this.difficulty) {
+                    case 'easy': return 20;    // تقليل هامش الخطأ
+                    case 'medium': return 10;  // تقليل هامش الخطأ
+                    case 'hard': return 3;     // تقليل هامش الخطأ
+                    default: return 10;
+                }
+            }
+
+            getPredictionAccuracy() {
+                switch(this.difficulty) {
+                    case 'easy': return 0.7;   // دقة تنبؤ 70%
+                    case 'medium': return 0.85; // دقة تنبؤ 85%
+                    case 'hard': return 0.95;  // دقة تنبؤ 95%
+                    default: return 0.85;
+                }
+            }
+
+            update(ball) {
+                let targetY = ball.y;
+                
+                // Predict ball position based on difficulty
+                if (Math.random() < this.predictionAccuracy) {
+                    // Calculate time for ball to reach paddle
+                    const timeToReach = Math.abs((this.paddle.x - ball.x) / ball.vx);
+                    
+                    // Predict where ball will be
+                    let predictedY = ball.y + ball.vy * timeToReach;
+                    
+                    // Predict wall bounces for medium and hard
+                    if (this.difficulty !== 'easy') {
+                        // Simulate wall bounces
+                        while (predictedY < 0 || predictedY > canvasHeight) {
+                            if (predictedY < 0) predictedY = -predictedY;
+                            if (predictedY > canvasHeight) predictedY = 2 * canvasHeight - predictedY;
+                        }
+                    }
+                    
+                    targetY = predictedY;
+                }
+                
+                // Add small error margin
+                targetY += (Math.random() - 0.5) * this.errorMargin;
+                
+                // Move paddle directly to target (no smoothing for AI)
+                const currentY = this.paddle.y + this.paddle.height / 2;
+                const diff = targetY - currentY;
+                
+                // Move at full speed towards target
+                if (Math.abs(diff) > this.speed) {
+                    this.paddle.moveTo(currentY + Math.sign(diff) * this.speed);
+                } else {
+                    this.paddle.moveTo(targetY);
+                }
+            }
+        }
+
+        // ===== INPUT HANDLING =====
+        class Input {
+            constructor() {
+                this.touches = new Map();
+                this.keys = {};
+                this.tilt = 0;
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                // Touch events
+                canvas.addEventListener('touchstart', this.handleTouchStart.bind(this));
+                canvas.addEventListener('touchmove', this.handleTouchMove.bind(this));
+                canvas.addEventListener('touchend', this.handleTouchEnd.bind(this));
+                
+                // Mouse events for desktop
+                canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                
+                // Keyboard events
+                window.addEventListener('keydown', this.handleKeyDown.bind(this));
+                window.addEventListener('keyup', this.handleKeyUp.bind(this));
+                
+                // Device orientation
+                if (window.DeviceOrientationEvent) {
+                    window.addEventListener('deviceorientation', this.handleOrientation.bind(this));
+                }
+            }
+
+            handleTouchStart(e) {
+                e.preventDefault();
+                for (let touch of e.changedTouches) {
+                    this.touches.set(touch.identifier, {
+                        x: touch.clientX,
+                        y: touch.clientY,
+                        startY: touch.clientY
+                    });
+                }
+            }
+
+            handleTouchMove(e) {
+                e.preventDefault();
+                for (let touch of e.changedTouches) {
+                    const touchData = this.touches.get(touch.identifier);
+                    if (touchData) {
+                        touchData.x = touch.clientX;
+                        touchData.y = touch.clientY;
+                    }
+                }
+            }
+
+            handleTouchEnd(e) {
+                e.preventDefault();
+                for (let touch of e.changedTouches) {
+                    this.touches.delete(touch.identifier);
+                }
+            }
+
+            handleMouseDown(e) {
+                this.touches.set('mouse', {
+                    x: e.clientX,
+                    y: e.clientY,
+                    startY: e.clientY
+                });
+            }
+
+            handleMouseMove(e) {
+                const touchData = this.touches.get('mouse');
+                if (touchData) {
+                    touchData.x = e.clientX;
+                    touchData.y = e.clientY;
+                }
+            }
+
+            handleMouseUp(e) {
+                this.touches.delete('mouse');
+            }
+
+            handleKeyDown(e) {
+                this.keys[e.key] = true;
+            }
+
+            handleKeyUp(e) {
+                this.keys[e.key] = false;
+            }
+
+            handleOrientation(e) {
+                if (gameState.tiltControl) {
+                    this.tilt = e.gamma || 0; // -90 to 90
+                }
+            }
+
+            update() {
+                // Handle touch/mouse input
+                this.touches.forEach((touch, id) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = touch.x - rect.left;
+                    const y = touch.y - rect.top;
+                    
+                    if (gameState.mode === 'two' || x < canvasWidth / 2) {
+                        // Left paddle
+                        leftPaddle.moveTo(y);
+                    } else if (gameState.mode === 'two') {
+                        // Right paddle in two player mode
+                        rightPaddle.moveTo(y);
+                    }
+                });
+
+                // Handle keyboard input
+                if (this.keys['ArrowUp']) {
+                    leftPaddle.moveTo(leftPaddle.y - leftPaddle.speed);
+                }
+                if (this.keys['ArrowDown']) {
+                    leftPaddle.moveTo(leftPaddle.y + leftPaddle.speed);
+                }
+                if (this.keys['w'] || this.keys['W']) {
+                    rightPaddle.moveTo(rightPaddle.y - rightPaddle.speed);
+                }
+                if (this.keys['s'] || this.keys['S']) {
+                    rightPaddle.moveTo(rightPaddle.y + rightPaddle.speed);
+                }
+
+                // Handle tilt control
+                if (gameState.tiltControl && gameState.mode === 'single') {
+                    const tiltAmount = this.tilt / 90; // -1 to 1
+                    const targetY = canvasHeight / 2 + (tiltAmount * canvasHeight / 3);
+                    leftPaddle.moveTo(targetY);
+                }
+            }
+        }
+
+        // ===== AUDIO =====
+        class Audio {
+            constructor() {
+                this.context = null;
+                this.init();
+            }
+
+            init() {
+                try {
+                    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.context = new AudioContext();
+                } catch (e) {
+                    console.log('Web Audio API not supported');
+                }
+            }
+
+            playSound(type) {
+                if (!gameState.soundEnabled || !this.context) return;
+
+                const oscillator = this.context.createOscillator();
+                const gainNode = this.context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.context.destination);
+
+                switch(type) {
+                    case 'paddle':
+                        oscillator.frequency.value = 440;
+                        gainNode.gain.setValueAtTime(0.3, this.context.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.1);
+                        break;
+                    case 'wall':
+                        oscillator.frequency.value = 220;
+                        gainNode.gain.setValueAtTime(0.2, this.context.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.1);
+                        break;
+                    case 'score':
+                        oscillator.frequency.value = 880;
+                        gainNode.gain.setValueAtTime(0.4, this.context.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.3);
+                        break;
+                }
+
+                oscillator.start(this.context.currentTime);
+                oscillator.stop(this.context.currentTime + 0.3);
+            }
+        }
+
+        // ===== STORAGE =====
+        class Storage {
+            static save() {
+                const data = {
+                    settings: {
+                        difficulty: gameState.difficulty,
+                        winScore: gameState.winScore,
+                        gameSpeed: gameState.gameSpeed,
+                        soundEnabled: gameState.soundEnabled,
+                        vibrationEnabled: gameState.vibrationEnabled,
+                        showFps: gameState.showFps,
+                        tiltControl: gameState.tiltControl,
+                        darkMode: gameState.darkMode
+                    },
+                    stats: gameState.stats
+                };
+                localStorage.setItem('pingPongData', JSON.stringify(data));
+            }
+
+            static load() {
+                const data = localStorage.getItem('pingPongData');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    
+                    // Load settings
+                    if (parsed.settings) {
+                        Object.assign(gameState, parsed.settings);
+                    }
+                    
+                    // Load stats
+                    if (parsed.stats) {
+                        gameState.stats = parsed.stats;
+                    }
+                    
+                    // Apply loaded settings
+                    applySettings();
+                }
+            }
+        }
+
+        // ===== INITIALIZATION =====
+        let leftPaddle, rightPaddle, ball, ai, input, audio;
+        let lastTime = 0;
+        let fps = 60;
+        let frameCount = 0;
+        let fpsTime = 0;
+
+        function init() {
+            // Load saved data
+            Storage.load();
             
-            <div id="accountFormError" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <i class="fas fa-exclamation-circle ml-2"></i>
-                <span id="accountFormErrorText"></span>
-            </div>
+            // Initialize game objects
+            resizeCanvas();
+            leftPaddle = new Paddle(30, canvasHeight / 2 - CONSTANTS.PADDLE_HEIGHT / 2, true);
+            rightPaddle = new Paddle(canvasWidth - 30 - CONSTANTS.PADDLE_WIDTH, canvasHeight / 2 - CONSTANTS.PADDLE_HEIGHT / 2, false);
+            ball = new Ball();
+            input = new Input();
+            audio = new Audio();
             
-            <form id="accountForm" class="space-y-4">
-                <div>
-                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
-                        <i class="fas fa-tag ml-2"></i>اسم الحساب
+            // Set up AI
+            ai = new AI(rightPaddle, gameState.difficulty);
+            
+            // Update UI
+            updateScoreDisplay();
+            updateSoundButton();
+            
+            // Handle window resize
+            window.addEventListener('resize', resizeCanvas);
+        }
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvasWidth = container.clientWidth;
+            canvasHeight = container.clientHeight - 60; // Subtract header height
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            
+            // Reposition paddles if they exist
+            if (leftPaddle && rightPaddle) {
+                leftPaddle.x = 30;
+                rightPaddle.x = canvasWidth - 30 - CONSTANTS.PADDLE_WIDTH;
+            }
+        }
+
+        // ===== GAME LOOP =====
+        function gameLoop(currentTime) {
+            if (!gameState.running) return;
+            
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+            
+            // Calculate FPS
+            frameCount++;
+            fpsTime += deltaTime;
+            if (fpsTime >= 1000) {
+                fps = Math.round(frameCount * 1000 / fpsTime);
+                frameCount = 0;
+                fpsTime = 0;
+                if (gameState.showFps) {
+                    document.getElementById('fpsCounter').textContent = `${fps} FPS`;
+                }
+            }
+            
+            if (!gameState.paused) {
+                // Update input
+                input.update();
+                
+                // Update game objects
+                leftPaddle.update();
+                rightPaddle.update();
+                ball.update();
+                
+                // Update AI if in single player mode
+                if (gameState.mode === 'single') {
+                    ai.update(ball);
+                }
+            }
+            
+            // Render
+            render();
+            
+            // Continue loop
+            requestAnimationFrame(gameLoop);
+        }
+
+        function render() {
+            // Clear canvas
+            ctx.fillStyle = gameState.darkMode ? '#0f0f1e' : '#f0f0f3';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Draw center line
+            ctx.strokeStyle = gameState.darkMode ? '#2a2a3e' : '#d1d1d1';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath();
+            ctx.moveTo(canvasWidth / 2, 0);
+            ctx.lineTo(canvasWidth / 2, canvasHeight);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw game objects
+            leftPaddle.draw();
+            rightPaddle.draw();
+            ball.draw();
+            
+            // Draw pause overlay
+            if (gameState.paused) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('PAUSED', canvasWidth / 2, canvasHeight / 2);
+            }
+        }
+
+        // ===== GAME CONTROL =====
+        function startGame(mode) {
+            gameState.mode = mode;
+            gameState.leftScore = 0;
+            gameState.rightScore = 0;
+            gameState.paused = false;
+            gameState.running = true;
+            
+            // Reset ball
+            ball.reset();
+            
+            // Show game screen
+            showScreen('gameScreen');
+            
+            // Start game loop
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+            
+            showToast(`بدأت اللعبة في وضع ${mode === 'single' ? 'اللاعب الواحد' : 'لاعبين'}`);
+        }
+
+        function endGame() {
+            gameState.running = false;
+            
+            // Update stats
+            if (gameState.mode === 'single') {
+                if (gameState.leftScore > gameState.rightScore) {
+                    gameState.stats.singleWins++;
+                }
+            } else {
+                if (gameState.leftScore > gameState.rightScore) {
+                    gameState.stats.twoPlayerWins++;
+                }
+            }
+            
+            // Save stats
+            Storage.save();
+            
+            // Show victory screen with appropriate message
+            const victoryTitle = document.getElementById('victoryTitle');
+            const victoryMessage = document.getElementById('victoryMessage');
+            const victoryScore = document.getElementById('victoryScore');
+            
+            victoryScore.textContent = `النتيجة: ${gameState.leftScore} - ${gameState.rightScore}`;
+            
+            if (gameState.leftScore > gameState.rightScore) {
+                victoryTitle.textContent = 'فوز!';
+                if (gameState.mode === 'single') {
+                    victoryMessage.textContent = 'أحسنت! لقد هزمت الذكاء الاصطناعي! 🎉';
+                } else {
+                    victoryMessage.textContent = 'تهانينا للاعب الأيسر! 🏆';
+                }
+            } else {
+                victoryTitle.textContent = 'خسارة!';
+                if (gameState.mode === 'single') {
+                    victoryMessage.textContent = 'لقد فاز الذكاء الاصطناعي هذه المرة! حاول مرة أخرى 🤖';
+                } else {
+                    victoryMessage.textContent = 'تهانينا للاعب الأيمن! 🏆';
+                }
+            }
+            
+            showScreen('victoryScreen');
+        }
+
+        function restartGame() {
+            startGame(gameState.mode);
+        }
+
+        function togglePause() {
+            gameState.paused = !gameState.paused;
+            const pauseBtn = document.getElementById('pauseBtn');
+            pauseBtn.innerHTML = gameState.paused ? 
+                '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>' :
+                '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M14 19h4V5h-4m-6 14h4V5H8v14z"/></svg>';
+            
+            if (gameState.paused) {
+                showToast('اللعبة متوقفة');
+            }
+        }
+
+        // ===== UI FUNCTIONS =====
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('scoreDisplay').textContent = 
+                `${gameState.leftScore} : ${gameState.rightScore}`;
+        }
+
+        function updateSoundButton() {
+            const soundBtn = document.getElementById('soundBtn');
+            soundBtn.innerHTML = gameState.soundEnabled ? 
+                '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>' :
+                '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>';
+        }
+
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            updateSoundButton();
+            Storage.save();
+            showToast(gameState.soundEnabled ? 'الصوت مفعل' : 'الصوت معطل');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // ===== SETTINGS FUNCTIONS =====
+        function setDifficulty(difficulty) {
+            gameState.difficulty = difficulty;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (ai) {
+                ai.difficulty = difficulty;
+                ai.speed = ai.getSpeed();
+                ai.errorMargin = ai.getErrorMargin();
+                ai.predictionAccuracy = ai.getPredictionAccuracy();
+            }
+            
+            Storage.save();
+            showToast(`تم ضبط الصعوبة على ${difficulty === 'easy' ? 'سهل' : difficulty === 'medium' ? 'متوسط' : 'صعب'}`);
+        }
+
+        function updateSettings() {
+            gameState.winScore = parseInt(document.getElementById('winScore').value);
+            gameState.gameSpeed = parseFloat(document.getElementById('gameSpeed').value);
+            gameState.soundEnabled = document.getElementById('soundEnabled').checked;
+            gameState.vibrationEnabled = document.getElementById('vibrationEnabled').checked;
+            gameState.showFps = document.getElementById('showFps').checked;
+            gameState.tiltControl = document.getElementById('tiltControl').checked;
+            
+            // Update UI
+            updateSoundButton();
+            document.getElementById('fpsCounter').classList.toggle('show', gameState.showFps);
+            
+            Storage.save();
+            showToast('تم حفظ الإعدادات');
+        }
+
+        function applySettings() {
+            // Apply settings to UI
+            document.getElementById('winScore').value = gameState.winScore;
+            document.getElementById('gameSpeed').value = gameState.gameSpeed;
+            document.getElementById('soundEnabled').checked = gameState.soundEnabled;
+            document.getElementById('vibrationEnabled').checked = gameState.vibrationEnabled;
+            document.getElementById('showFps').checked = gameState.showFps;
+            document.getElementById('tiltControl').checked = gameState.tiltControl;
+            document.getElementById('darkMode').checked = gameState.darkMode;
+            
+            // Update difficulty buttons
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase().includes(gameState.difficulty)) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Apply theme
+            if (gameState.darkMode) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+            
+            // Update UI elements
+            updateSoundButton();
+            document.getElementById('fpsCounter').classList.toggle('show', gameState.showFps);
+        }
+
+        function resetSettings() {
+            if (confirm('هل أنت متأكد من إعادة التعيين؟')) {
+                gameState.difficulty = CONSTANTS.DEFAULT_DIFFICULTY;
+                gameState.winScore = CONSTANTS.DEFAULT_WIN_SCORE;
+                gameState.gameSpeed = CONSTANTS.DEFAULT_GAME_SPEED;
+                gameState.soundEnabled = CONSTANTS.DEFAULT_SOUND_ENABLED;
+                gameState.vibrationEnabled = CONSTANTS.DEFAULT_VIBRATION_ENABLED;
+                gameState.showFps = CONSTANTS.DEFAULT_SHOW_FPS;
+                gameState.tiltControl = CONSTANTS.DEFAULT_TILT_CONTROL;
+                gameState.darkMode = CONSTANTS.DEFAULT_DARK_MODE;
+                
+                applySettings();
+                Storage.save();
+                showToast('تم إعادة التعيين إلى الافتراضي');
+            }
+        }
+
+        function toggleTheme() {
+            gameState.darkMode = document.getElementById('darkMode').checked;
+            if (gameState.darkMode) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+            Storage.save();
+        }
+
+        // ===== HELPER FUNCTIONS =====
+        function playSound(type) {
+            if (audio) {
+                audio.playSound(type);
+            }
+        }
+
+        // ===== INIT ON LOAD =====
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
