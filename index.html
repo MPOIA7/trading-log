@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Ping Pong Mobile</title>
+    <title>Ping Pong Mobile - Online</title>
     <style>
         /* ===== CONSTANTS & VARIABLES ===== */
         :root {
@@ -217,6 +217,96 @@
             cursor: pointer;
         }
 
+        /* ===== ONLINE LOBBY ===== */
+        .online-lobby {
+            background: var(--ui-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 
+                10px 10px 20px var(--shadow-dark),
+                -10px -10px 20px var(--shadow-light);
+            text-align: center;
+        }
+
+        .lobby-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .room-code-container {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: var(--button-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 
+                inset 2px 2px 4px var(--shadow-dark),
+                inset -2px -2px 4px var(--shadow-light);
+        }
+
+        .room-code {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            letter-spacing: 0.5rem;
+        }
+
+        .room-code-label {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.7;
+        }
+
+        .join-input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.2rem;
+            text-align: center;
+            border-radius: var(--border-radius);
+            border: none;
+            background: var(--button-bg);
+            box-shadow: 
+                inset 2px 2px 4px var(--shadow-dark),
+                inset -2px -2px 4px var(--shadow-light);
+            margin: 1rem 0;
+            letter-spacing: 0.3rem;
+        }
+
+        .status-message {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: var(--border-radius);
+            color: var(--primary-color);
+        }
+
+        .player-list {
+            margin: 1rem 0;
+            text-align: right;
+        }
+
+        .player-item {
+            padding: 0.5rem 1rem;
+            margin: 0.5rem 0;
+            background: var(--button-bg);
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4caf50;
+        }
+
+        .player-status.waiting {
+            background: #ff9800;
+        }
+
         /* ===== SETTINGS SCREEN ===== */
         .settings-container {
             background: var(--ui-bg);
@@ -414,12 +504,29 @@
             display: block;
         }
 
+        /* ===== LOADING SPINNER ===== */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--button-bg);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 480px) {
             .settings-container,
             .howto-container,
             .mode-selection,
-            .victory-container {
+            .victory-container,
+            .online-lobby {
                 padding: 1.5rem;
             }
             
@@ -430,6 +537,11 @@
             .btn {
                 padding: 0.8rem 1.5rem;
                 font-size: 1rem;
+            }
+            
+            .room-code {
+                font-size: 1.5rem;
+                letter-spacing: 0.2rem;
             }
         }
 
@@ -457,6 +569,12 @@
                     Play
                     <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M8 5v14l11-7z"/>
+                    </svg>
+                </button>
+                <button class="btn" onclick="showScreen('onlineLobby')" aria-label="العب أونلاين">
+                    Play Online
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                     </svg>
                 </button>
                 <button class="btn" onclick="showScreen('settings')" aria-label="الإعدادات">
@@ -490,6 +608,56 @@
                     Back
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Online Lobby Screen -->
+    <div id="onlineLobby" class="screen">
+        <div class="online-lobby">
+            <h2 class="lobby-title">العب مع الأصدقاء</h2>
+            
+            <div id="createRoomSection">
+                <button class="btn" onclick="createRoom()" aria-label="إنشاء غرفة">
+                    إنشاء غرفة جديدة
+                </button>
+                
+                <div class="room-code-container" id="roomCodeContainer" style="display: none;">
+                    <div class="room-code-label">كود الغرفة:</div>
+                    <div class="room-code" id="roomCode">------</div>
+                    <button class="btn" onclick="copyRoomCode()" style="margin-top: 1rem; padding: 0.5rem 1rem; font-size: 0.9rem;">
+                        نسخ الكود
+                    </button>
+                </div>
+            </div>
+            
+            <div style="margin: 2rem 0; font-size: 1.2rem; opacity: 0.7;">أو</div>
+            
+            <div id="joinRoomSection">
+                <input type="text" class="join-input" id="joinCodeInput" placeholder="أدخل كود الغرفة" maxlength="6">
+                <button class="btn" onclick="joinRoom()" aria-label="انضمام للغرفة">
+                    انضمام للغرفة
+                </button>
+            </div>
+            
+            <div class="status-message" id="lobbyStatus" style="display: none;"></div>
+            
+            <div class="player-list" id="playerList" style="display: none;">
+                <h3 style="margin-bottom: 1rem;">اللاعبون:</h3>
+                <div class="player-item">
+                    <span>أنت</span>
+                    <span class="player-status"></span>
+                </div>
+                <div class="player-item" id="opponentPlayer" style="display: none;">
+                    <span>الخصم</span>
+                    <span class="player-status waiting"></span>
+                </div>
+            </div>
+            
+            <div class="spinner" id="lobbySpinner" style="display: none;"></div>
+            
+            <button class="btn" onclick="showScreen('mainMenu')" style="margin-top: 2rem;">
+                العودة للقائمة
+            </button>
         </div>
     </div>
 
@@ -593,6 +761,14 @@
             </div>
 
             <div class="howto-section">
+                <h3>اللعب أونلاين</h3>
+                <p>1. اضغط على "Play Online"<br>
+                2. أنشئ غرفة جديدة وشارك الكود مع صديقك<br>
+                3. أو أدخل كود الغرفة التي شاركها صديقك<br>
+                4. انتظر حتى ينضم اللاعب الآخر وابدأ اللعب!</p>
+            </div>
+
+            <div class="howto-section">
                 <h3>على الهاتف</h3>
                 <p>اسحب بإصبعك لأعلى أو لأسفل في نصف الشاشة الخاص بك لتحريك المضرب. اللاعب الأيسر يستخدم النصف الأيسر، واللاعب الأيمن يستخدم النصف الأيمن.</p>
             </div>
@@ -620,7 +796,7 @@
             <div class="victory-message" id="victoryMessage">تهانينا على فوزك!</div>
             <div class="victory-score" id="victoryScore">النتيجة: 0 - 0</div>
             <div class="mode-buttons">
-                <button class="btn" onclick="continueGame()">متابعة اللعب</button>
+                <button class="btn" id="continueBtn" onclick="continueGame()">متابعة اللعب</button>
                 <button class="btn" onclick="showScreen('mainMenu')">القائمة الرئيسية</button>
             </div>
         </div>
@@ -639,9 +815,9 @@
             BALL_SPEED: 5,
             BALL_ACCELERATION: 0.001,
             MAX_BALL_SPEED: 15,
-            AI_EASY_SPEED: 6,        // تقليل سرعة البوت
-            AI_MEDIUM_SPEED: 8,      // تقليل سرعة البوت
-            AI_HARD_SPEED: 10,       // تقليل سرعة البوت
+            AI_EASY_SPEED: 6,
+            AI_MEDIUM_SPEED: 8,
+            AI_HARD_SPEED: 10,
             WIN_SCORES: [5, 7, 10, 11],
             DEFAULT_WIN_SCORE: 10,
             DEFAULT_DIFFICULTY: 'medium',
@@ -651,13 +827,13 @@
             DEFAULT_TILT_CONTROL: false,
             DEFAULT_DARK_MODE: false,
             DEFAULT_GAME_SPEED: 1,
-            FINAL_WIN_SCORE: 10      // عدد الانتصارات للفوز النهائي
+            FINAL_WIN_SCORE: 10
         };
 
         // ===== GAME STATE =====
         let gameState = {
-            mode: 'single', // 'single' or 'two'
-            difficulty: 'easy', // 'easy', 'medium', 'hard'
+            mode: 'single',
+            difficulty: 'easy',
             winScore: CONSTANTS.DEFAULT_WIN_SCORE,
             gameSpeed: CONSTANTS.DEFAULT_GAME_SPEED,
             soundEnabled: CONSTANTS.DEFAULT_SOUND_ENABLED,
@@ -669,14 +845,165 @@
             running: false,
             leftScore: 0,
             rightScore: 0,
-            leftWins: 0,          // عدد انتصارات اللاعب الأيسر
-            rightWins: 0,         // عدد انتصارات اللاعب الأيمن
+            leftWins: 0,
+            rightWins: 0,
             lastWinner: null,
+            isOnline: false,
+            isHost: false,
+            roomId: null,
+            playerId: null,
             stats: {
                 singleWins: 0,
-                twoPlayerWins: 0
+                twoPlayerWins: 0,
+                onlineWins: 0
             }
         };
+
+        // ===== ONLINE MULTIPLAYER =====
+        class OnlineManager {
+            constructor() {
+                this.peer = null;
+                this.conn = null;
+                this.roomId = null;
+                this.isHost = false;
+                this.onOpponentConnected = null;
+                this.onOpponentDisconnected = null;
+                this.onGameUpdate = null;
+            }
+
+            async init() {
+                // Load PeerJS library dynamically
+                if (!window.Peer) {
+                    await this.loadPeerJS();
+                }
+                
+                // Create a new peer with a random ID
+                this.peer = new Peer();
+                
+                this.peer.on('open', (id) => {
+                    console.log('My peer ID is:', id);
+                    gameState.playerId = id;
+                });
+                
+                this.peer.on('connection', (conn) => {
+                    this.handleConnection(conn);
+                });
+                
+                this.peer.on('error', (err) => {
+                    console.error('Peer error:', err);
+                    showToast('خطأ في الاتصال');
+                });
+            }
+
+            async loadPeerJS() {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js';
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+
+            createRoom() {
+                this.roomId = this.generateRoomCode();
+                this.isHost = true;
+                gameState.roomId = this.roomId;
+                gameState.isHost = true;
+                
+                // Show room code
+                document.getElementById('roomCode').textContent = this.roomId;
+                document.getElementById('roomCodeContainer').style.display = 'block';
+                document.getElementById('lobbyStatus').style.display = 'block';
+                document.getElementById('lobbyStatus').textContent = 'في انتظار انضمام لاعب آخر...';
+                document.getElementById('lobbySpinner').style.display = 'block';
+                document.getElementById('playerList').style.display = 'block';
+                
+                showToast('تم إنشاء الغرفة بنجاح');
+            }
+
+            joinRoom(roomId) {
+                this.roomId = roomId;
+                this.isHost = false;
+                gameState.roomId = roomId;
+                gameState.isHost = false;
+                
+                // Connect to host
+                const conn = this.peer.connect(roomId);
+                this.handleConnection(conn);
+                
+                document.getElementById('lobbyStatus').style.display = 'block';
+                document.getElementById('lobbyStatus').textContent = 'جاري الاتصال بالغرفة...';
+                document.getElementById('lobbySpinner').style.display = 'block';
+                document.getElementById('playerList').style.display = 'block';
+            }
+
+            handleConnection(conn) {
+                this.conn = conn;
+                
+                conn.on('open', () => {
+                    console.log('Connected to peer!');
+                    document.getElementById('lobbyStatus').textContent = 'تم الاتصال! جاري بدء اللعبة...';
+                    document.getElementById('opponentPlayer').style.display = 'flex';
+                    document.querySelector('#opponentPlayer .player-status').classList.remove('waiting');
+                    
+                    if (this.onOpponentConnected) {
+                        this.onOpponentConnected();
+                    }
+                    
+                    // Start game after a short delay
+                    setTimeout(() => {
+                        startOnlineGame();
+                    }, 1500);
+                });
+                
+                conn.on('data', (data) => {
+                    this.handleGameData(data);
+                });
+                
+                conn.on('close', () => {
+                    console.log('Connection closed');
+                    if (this.onOpponentDisconnected) {
+                        this.onOpponentDisconnected();
+                    }
+                });
+                
+                conn.on('error', (err) => {
+                    console.error('Connection error:', err);
+                    showToast('خطأ في الاتصال بالخصم');
+                });
+            }
+
+            sendGameData(data) {
+                if (this.conn && this.conn.open) {
+                    this.conn.send(data);
+                }
+            }
+
+            handleGameData(data) {
+                if (this.onGameUpdate) {
+                    this.onGameUpdate(data);
+                }
+            }
+
+            generateRoomCode() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let code = '';
+                for (let i = 0; i < 6; i++) {
+                    code += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return code;
+            }
+
+            disconnect() {
+                if (this.conn) {
+                    this.conn.close();
+                }
+                if (this.peer) {
+                    this.peer.destroy();
+                }
+            }
+        }
 
         // ===== CANVAS SETUP =====
         const canvas = document.getElementById('gameCanvas');
@@ -696,11 +1023,8 @@
             }
 
             update() {
-                // Smooth movement towards target
                 const diff = this.targetY - this.y;
                 this.y += diff * 0.3;
-
-                // Keep paddle within bounds
                 this.y = Math.max(0, Math.min(canvasHeight - this.height, this.y));
             }
 
@@ -714,6 +1038,20 @@
 
             moveTo(y) {
                 this.targetY = y - this.height / 2;
+            }
+
+            getState() {
+                return {
+                    x: this.x,
+                    y: this.y,
+                    targetY: this.targetY
+                };
+            }
+
+            setState(state) {
+                this.x = state.x;
+                this.y = state.y;
+                this.targetY = state.targetY;
             }
         }
 
@@ -736,22 +1074,17 @@
             update() {
                 this.x += this.vx * gameState.gameSpeed;
                 this.y += this.vy * gameState.gameSpeed;
-
-                // Accelerate ball
                 this.speed = Math.min(this.speed + this.acceleration, CONSTANTS.MAX_BALL_SPEED);
 
-                // Top and bottom collision
                 if (this.y - this.size/2 <= 0 || this.y + this.size/2 >= canvasHeight) {
                     this.vy = -this.vy;
                     playSound('wall');
                 }
 
-                // Paddle collision
                 if (this.checkPaddleCollision(leftPaddle) || this.checkPaddleCollision(rightPaddle)) {
                     playSound('paddle');
                 }
 
-                // Score detection
                 if (this.x < 0) {
                     gameState.rightScore++;
                     this.onScore('right');
@@ -767,18 +1100,12 @@
                     this.y - this.size/2 < paddle.y + paddle.height &&
                     this.y + this.size/2 > paddle.y) {
                     
-                    // Calculate hit position (0 to 1)
                     const hitPos = (this.y - paddle.y) / paddle.height;
-                    
-                    // Change angle based on hit position
-                    const angle = (hitPos - 0.5) * Math.PI / 3; // -60 to 60 degrees
-                    
-                    // Set new velocity
+                    const angle = (hitPos - 0.5) * Math.PI / 3;
                     const direction = paddle.isLeft ? 1 : -1;
                     this.vx = Math.cos(angle) * this.speed * direction;
                     this.vy = Math.sin(angle) * this.speed;
                     
-                    // Prevent ball from getting stuck
                     if (paddle.isLeft) {
                         this.x = paddle.x + paddle.width + this.size/2;
                     } else {
@@ -801,7 +1128,6 @@
                 
                 playSound('score');
                 
-                // Check if match is won
                 if (gameState.leftScore >= gameState.winScore || gameState.rightScore >= gameState.winScore) {
                     endMatch();
                 } else {
@@ -818,6 +1144,24 @@
                 ctx.arc(this.x, this.y, this.size/2, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.shadowBlur = 0;
+            }
+
+            getState() {
+                return {
+                    x: this.x,
+                    y: this.y,
+                    vx: this.vx,
+                    vy: this.vy,
+                    speed: this.speed
+                };
+            }
+
+            setState(state) {
+                this.x = state.x;
+                this.y = state.y;
+                this.vx = state.vx;
+                this.vy = state.vy;
+                this.speed = state.speed;
             }
         }
 
@@ -841,18 +1185,18 @@
 
             getErrorMargin() {
                 switch(this.difficulty) {
-                    case 'easy': return 40;    // زيادة هامش الخطأ
-                    case 'medium': return 25;  // زيادة هامش الخطأ
-                    case 'hard': return 15;   // زيادة هامش الخطأ
+                    case 'easy': return 40;
+                    case 'medium': return 25;
+                    case 'hard': return 15;
                     default: return 25;
                 }
             }
 
             getPredictionAccuracy() {
                 switch(this.difficulty) {
-                    case 'easy': return 0.5;   // تقليل دقة التنبؤ
-                    case 'medium': return 0.7;  // تقليل دقة التنبؤ
-                    case 'hard': return 0.85;  // تقليل دقة التنبؤ
+                    case 'easy': return 0.5;
+                    case 'medium': return 0.7;
+                    case 'hard': return 0.85;
                     default: return 0.7;
                 }
             }
@@ -860,17 +1204,11 @@
             update(ball) {
                 let targetY = ball.y;
                 
-                // Predict ball position based on difficulty
                 if (Math.random() < this.predictionAccuracy) {
-                    // Calculate time for ball to reach paddle
                     const timeToReach = Math.abs((this.paddle.x - ball.x) / ball.vx);
-                    
-                    // Predict where ball will be
                     let predictedY = ball.y + ball.vy * timeToReach;
                     
-                    // Predict wall bounces for medium and hard
                     if (this.difficulty !== 'easy') {
-                        // Simulate wall bounces
                         while (predictedY < 0 || predictedY > canvasHeight) {
                             if (predictedY < 0) predictedY = -predictedY;
                             if (predictedY > canvasHeight) predictedY = 2 * canvasHeight - predictedY;
@@ -880,14 +1218,11 @@
                     targetY = predictedY;
                 }
                 
-                // Add error margin
                 targetY += (Math.random() - 0.5) * this.errorMargin;
                 
-                // Move paddle directly to target (no smoothing for AI)
                 const currentY = this.paddle.y + this.paddle.height / 2;
                 const diff = targetY - currentY;
                 
-                // Move at full speed towards target
                 if (Math.abs(diff) > this.speed) {
                     this.paddle.moveTo(currentY + Math.sign(diff) * this.speed);
                 } else {
@@ -906,21 +1241,17 @@
             }
 
             setupEventListeners() {
-                // Touch events
                 canvas.addEventListener('touchstart', this.handleTouchStart.bind(this));
                 canvas.addEventListener('touchmove', this.handleTouchMove.bind(this));
                 canvas.addEventListener('touchend', this.handleTouchEnd.bind(this));
                 
-                // Mouse events for desktop
                 canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
                 canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
                 canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
                 
-                // Keyboard events
                 window.addEventListener('keydown', this.handleKeyDown.bind(this));
                 window.addEventListener('keyup', this.handleKeyUp.bind(this));
                 
-                // Device orientation
                 if (window.DeviceOrientationEvent) {
                     window.addEventListener('deviceorientation', this.handleOrientation.bind(this));
                 }
@@ -967,7 +1298,7 @@
                 const touchData = this.touches.get('mouse');
                 if (touchData) {
                     touchData.x = e.clientX;
-                    touchData.y = touch.clientY;
+                    touchData.y = e.clientY;
                 }
             }
 
@@ -985,43 +1316,58 @@
 
             handleOrientation(e) {
                 if (gameState.tiltControl) {
-                    this.tilt = e.gamma || 0; // -90 to 90
+                    this.tilt = e.gamma || 0;
                 }
             }
 
             update() {
-                // Handle touch/mouse input
-                this.touches.forEach((touch, id) => {
-                    const rect = canvas.getBoundingClientRect();
-                    const x = touch.x - rect.left;
-                    const y = touch.y - rect.top;
+                // In online mode, only control local paddle
+                if (gameState.isOnline) {
+                    const isLeftPaddle = gameState.isHost;
                     
-                    if (gameState.mode === 'two' || x < canvasWidth / 2) {
-                        // Left paddle
-                        leftPaddle.moveTo(y);
-                    } else if (gameState.mode === 'two') {
-                        // Right paddle in two player mode
-                        rightPaddle.moveTo(y);
+                    this.touches.forEach((touch, id) => {
+                        const rect = canvas.getBoundingClientRect();
+                        const x = touch.x - rect.left;
+                        const y = touch.y - rect.top;
+                        
+                        if ((isLeftPaddle && x < canvasWidth / 2) || (!isLeftPaddle && x > canvasWidth / 2)) {
+                            if (isLeftPaddle) {
+                                leftPaddle.moveTo(y);
+                            } else {
+                                rightPaddle.moveTo(y);
+                            }
+                        }
+                    });
+
+                    if (isLeftPaddle) {
+                        if (this.keys['ArrowUp']) leftPaddle.moveTo(leftPaddle.y - leftPaddle.speed);
+                        if (this.keys['ArrowDown']) leftPaddle.moveTo(leftPaddle.y + leftPaddle.speed);
+                    } else {
+                        if (this.keys['w'] || this.keys['W']) rightPaddle.moveTo(rightPaddle.y - rightPaddle.speed);
+                        if (this.keys['s'] || this.keys['S']) rightPaddle.moveTo(rightPaddle.y + rightPaddle.speed);
                     }
-                });
+                } else {
+                    // Local multiplayer
+                    this.touches.forEach((touch, id) => {
+                        const rect = canvas.getBoundingClientRect();
+                        const x = touch.x - rect.left;
+                        const y = touch.y - rect.top;
+                        
+                        if (gameState.mode === 'two' || x < canvasWidth / 2) {
+                            leftPaddle.moveTo(y);
+                        } else if (gameState.mode === 'two') {
+                            rightPaddle.moveTo(y);
+                        }
+                    });
 
-                // Handle keyboard input
-                if (this.keys['ArrowUp']) {
-                    leftPaddle.moveTo(leftPaddle.y - leftPaddle.speed);
-                }
-                if (this.keys['ArrowDown']) {
-                    leftPaddle.moveTo(leftPaddle.y + leftPaddle.speed);
-                }
-                if (this.keys['w'] || this.keys['W']) {
-                    rightPaddle.moveTo(rightPaddle.y - rightPaddle.speed);
-                }
-                if (this.keys['s'] || this.keys['S']) {
-                    rightPaddle.moveTo(rightPaddle.y + rightPaddle.speed);
+                    if (this.keys['ArrowUp']) leftPaddle.moveTo(leftPaddle.y - leftPaddle.speed);
+                    if (this.keys['ArrowDown']) leftPaddle.moveTo(leftPaddle.y + leftPaddle.speed);
+                    if (this.keys['w'] || this.keys['W']) rightPaddle.moveTo(rightPaddle.y - rightPaddle.speed);
+                    if (this.keys['s'] || this.keys['S']) rightPaddle.moveTo(rightPaddle.y + rightPaddle.speed);
                 }
 
-                // Handle tilt control
                 if (gameState.tiltControl && gameState.mode === 'single') {
-                    const tiltAmount = this.tilt / 90; // -1 to 1
+                    const tiltAmount = this.tilt / 90;
                     const targetY = canvasHeight / 2 + (tiltAmount * canvasHeight / 3);
                     leftPaddle.moveTo(targetY);
                 }
@@ -1100,34 +1446,45 @@
                 if (data) {
                     const parsed = JSON.parse(data);
                     
-                    // Load settings
                     if (parsed.settings) {
                         Object.assign(gameState, parsed.settings);
                     }
                     
-                    // Load stats
                     if (parsed.stats) {
                         gameState.stats = parsed.stats;
                     }
                     
-                    // Apply loaded settings
                     applySettings();
                 }
             }
         }
 
         // ===== INITIALIZATION =====
-        let leftPaddle, rightPaddle, ball, ai, input, audio;
+        let leftPaddle, rightPaddle, ball, ai, input, audio, onlineManager;
         let lastTime = 0;
         let fps = 60;
         let frameCount = 0;
         let fpsTime = 0;
+        let lastSyncTime = 0;
 
-        function init() {
-            // Load saved data
+        async function init() {
             Storage.load();
             
-            // Initialize game objects
+            // Initialize online manager
+            onlineManager = new OnlineManager();
+            onlineManager.onOpponentConnected = () => {
+                showToast('تم الاتصال بالخصم!');
+            };
+            onlineManager.onOpponentDisconnected = () => {
+                showToast('انقطع اتصال الخصم');
+                endGame();
+            };
+            onlineManager.onGameUpdate = (data) => {
+                handleOnlineUpdate(data);
+            };
+            
+            await onlineManager.init();
+            
             resizeCanvas();
             leftPaddle = new Paddle(30, canvasHeight / 2 - CONSTANTS.PADDLE_HEIGHT / 2, true);
             rightPaddle = new Paddle(canvasWidth - 30 - CONSTANTS.PADDLE_WIDTH, canvasHeight / 2 - CONSTANTS.PADDLE_HEIGHT / 2, false);
@@ -1135,26 +1492,22 @@
             input = new Input();
             audio = new Audio();
             
-            // Set up AI
             ai = new AI(rightPaddle, gameState.difficulty);
             
-            // Update UI
             updateScoreDisplay();
             updateWinsDisplay();
             updateSoundButton();
             
-            // Handle window resize
             window.addEventListener('resize', resizeCanvas);
         }
 
         function resizeCanvas() {
             const container = canvas.parentElement;
             canvasWidth = container.clientWidth;
-            canvasHeight = container.clientHeight - 60; // Subtract header height
+            canvasHeight = container.clientHeight - 60;
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;
             
-            // Reposition paddles if they exist
             if (leftPaddle && rightPaddle) {
                 leftPaddle.x = 30;
                 rightPaddle.x = canvasWidth - 30 - CONSTANTS.PADDLE_WIDTH;
@@ -1168,7 +1521,6 @@
             const deltaTime = currentTime - lastTime;
             lastTime = currentTime;
             
-            // Calculate FPS
             frameCount++;
             fpsTime += deltaTime;
             if (fpsTime >= 1000) {
@@ -1181,33 +1533,31 @@
             }
             
             if (!gameState.paused) {
-                // Update input
                 input.update();
                 
-                // Update game objects
                 leftPaddle.update();
                 rightPaddle.update();
                 ball.update();
                 
-                // Update AI if in single player mode
                 if (gameState.mode === 'single') {
                     ai.update(ball);
                 }
+                
+                // Sync game state in online mode
+                if (gameState.isOnline && currentTime - lastSyncTime > 50) {
+                    syncGameState();
+                    lastSyncTime = currentTime;
+                }
             }
             
-            // Render
             render();
-            
-            // Continue loop
             requestAnimationFrame(gameLoop);
         }
 
         function render() {
-            // Clear canvas
             ctx.fillStyle = gameState.darkMode ? '#0f0f1e' : '#f0f0f3';
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
             
-            // Draw center line
             ctx.strokeStyle = gameState.darkMode ? '#2a2a3e' : '#d1d1d1';
             ctx.lineWidth = 2;
             ctx.setLineDash([10, 10]);
@@ -1217,12 +1567,10 @@
             ctx.stroke();
             ctx.setLineDash([]);
             
-            // Draw game objects
             leftPaddle.draw();
             rightPaddle.draw();
             ball.draw();
             
-            // Draw pause overlay
             if (gameState.paused) {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
                 ctx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -1233,9 +1581,30 @@
             }
         }
 
-        // ===== GAME CONTROL =====
-        function startGame(mode) {
-            gameState.mode = mode;
+        // ===== ONLINE MULTIPLAYER FUNCTIONS =====
+        function createRoom() {
+            onlineManager.createRoom();
+        }
+
+        function joinRoom() {
+            const code = document.getElementById('joinCodeInput').value.toUpperCase();
+            if (code.length === 6) {
+                onlineManager.joinRoom(code);
+            } else {
+                showToast('يرجى إدخال كود غرفة صحيح');
+            }
+        }
+
+        function copyRoomCode() {
+            const code = document.getElementById('roomCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('تم نسخ الكود!');
+            });
+        }
+
+        function startOnlineGame() {
+            gameState.mode = 'online';
+            gameState.isOnline = true;
             gameState.leftScore = 0;
             gameState.rightScore = 0;
             gameState.leftWins = 0;
@@ -1243,13 +1612,68 @@
             gameState.paused = false;
             gameState.running = true;
             
-            // Reset ball
             ball.reset();
             
-            // Show game screen
             showScreen('gameScreen');
             
-            // Start game loop
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+            
+            showToast('بدأت اللعبة الأونلاين!');
+        }
+
+        function syncGameState() {
+            if (!gameState.isOnline) return;
+            
+            const gameData = {
+                type: 'gameUpdate',
+                leftPaddle: leftPaddle.getState(),
+                rightPaddle: rightPaddle.getState(),
+                ball: ball.getState(),
+                leftScore: gameState.leftScore,
+                rightScore: gameState.rightScore,
+                leftWins: gameState.leftWins,
+                rightWins: gameState.rightWins
+            };
+            
+            onlineManager.sendGameData(gameData);
+        }
+
+        function handleOnlineUpdate(data) {
+            if (data.type === 'gameUpdate') {
+                // Update opponent's paddle
+                if (gameState.isHost) {
+                    rightPaddle.setState(data.rightPaddle);
+                } else {
+                    leftPaddle.setState(data.leftPaddle);
+                }
+                
+                // Update scores
+                gameState.leftScore = data.leftScore;
+                gameState.rightScore = data.rightScore;
+                gameState.leftWins = data.leftWins;
+                gameState.rightWins = data.rightWins;
+                
+                updateScoreDisplay();
+                updateWinsDisplay();
+            }
+        }
+
+        // ===== GAME CONTROL =====
+        function startGame(mode) {
+            gameState.mode = mode;
+            gameState.isOnline = false;
+            gameState.leftScore = 0;
+            gameState.rightScore = 0;
+            gameState.leftWins = 0;
+            gameState.rightWins = 0;
+            gameState.paused = false;
+            gameState.running = true;
+            
+            ball.reset();
+            
+            showScreen('gameScreen');
+            
             lastTime = performance.now();
             requestAnimationFrame(gameLoop);
             
@@ -1259,23 +1683,19 @@
         function endMatch() {
             gameState.running = false;
             
-            // Update wins
             if (gameState.leftScore > gameState.rightScore) {
                 gameState.leftWins++;
                 if (gameState.mode === 'single') {
                     gameState.stats.singleWins++;
+                } else if (gameState.mode === 'online') {
+                    gameState.stats.onlineWins++;
                 }
             } else {
                 gameState.rightWins++;
-                if (gameState.mode === 'single') {
-                    // AI wins, but we don't track AI wins in stats
-                }
             }
             
-            // Save stats
             Storage.save();
             
-            // Check for final victory
             if (gameState.leftWins >= CONSTANTS.FINAL_WIN_SCORE || gameState.rightWins >= CONSTANTS.FINAL_WIN_SCORE) {
                 showFinalVictory();
             } else {
@@ -1287,12 +1707,17 @@
             const victoryTitle = document.getElementById('victoryTitle');
             const victoryMessage = document.getElementById('victoryMessage');
             const victoryScore = document.getElementById('victoryScore');
+            const continueBtn = document.getElementById('continueBtn');
             
             victoryScore.textContent = `نتيجة المباراة: ${gameState.leftScore} - ${gameState.rightScore}`;
+            continueBtn.textContent = 'متابعة اللعب';
+            continueBtn.onclick = continueGame;
             
             if (gameState.leftScore > gameState.rightScore) {
                 victoryTitle.textContent = 'فوز بالمباراة!';
                 if (gameState.mode === 'single') {
+                    victoryMessage.textContent = `أحسنت! لقد فزت بهذه المباراة! (${gameState.leftWins} - ${gameState.rightWins}) 🎉`;
+                } else if (gameState.mode === 'online') {
                     victoryMessage.textContent = `أحسنت! لقد فزت بهذه المباراة! (${gameState.leftWins} - ${gameState.rightWins}) 🎉`;
                 } else {
                     victoryMessage.textContent = `تهانينا للاعب الأيسر! (${gameState.leftWins} - ${gameState.rightWins}) 🏆`;
@@ -1301,6 +1726,8 @@
                 victoryTitle.textContent = 'خسارة بالمباراة!';
                 if (gameState.mode === 'single') {
                     victoryMessage.textContent = `لقد فاز الذكاء الاصطناعي بهذه المباراة! (${gameState.leftWins} - ${gameState.rightWins}) حاول مرة أخرى 🤖`;
+                } else if (gameState.mode === 'online') {
+                    victoryMessage.textContent = `لقد خسرت هذه المباراة! (${gameState.leftWins} - ${gameState.rightWins}) حاول مرة أخرى 😢`;
                 } else {
                     victoryMessage.textContent = `تهانينا للاعب الأيمن! (${gameState.leftWins} - ${gameState.rightWins}) 🏆`;
                 }
@@ -1313,13 +1740,24 @@
             const victoryTitle = document.getElementById('victoryTitle');
             const victoryMessage = document.getElementById('victoryMessage');
             const victoryScore = document.getElementById('victoryScore');
+            const continueBtn = document.getElementById('continueBtn');
             
             victoryScore.textContent = `النتيجة النهائية: ${gameState.leftWins} - ${gameState.rightWins} انتصارات`;
+            continueBtn.textContent = 'لعبة جديدة';
+            continueBtn.onclick = () => {
+                if (gameState.isOnline) {
+                    showScreen('onlineLobby');
+                } else {
+                    startGame(gameState.mode);
+                }
+            };
             
             if (gameState.leftWins > gameState.rightWins) {
                 victoryTitle.textContent = 'فوز نهائي! 🏆';
                 if (gameState.mode === 'single') {
                     victoryMessage.textContent = 'مبروك! لقد هزمت الذكاء الاصطناعي وحققت الفوز النهائي! 🎉🎉🎉';
+                } else if (gameState.mode === 'online') {
+                    victoryMessage.textContent = 'مبروك! لحققت الفوز النهائي في اللعب الأونلاين! 🎉🎉🎉';
                 } else {
                     victoryMessage.textContent = 'تهانينا للاعب الأيسر على الفوز النهائي! 🏆🏆🏆';
                 }
@@ -1327,43 +1765,49 @@
                 victoryTitle.textContent = 'خسارة نهائية! 😢';
                 if (gameState.mode === 'single') {
                     victoryMessage.textContent = 'لقد فاز الذكاء الاصطناعي باللعبة النهائية! حاول مرة أخرى 🤖💔';
+                } else if (gameState.mode === 'online') {
+                    victoryMessage.textContent = 'لقد خسرت اللعبة النهائية! حاول مرة أخرى 😢💔';
                 } else {
                     victoryMessage.textContent = 'تهانينا للاعب الأيمن على الفوز النهائي! 🏆🏆🏆';
                 }
             }
             
-            // Change button text for final victory
-            document.querySelector('.mode-buttons .btn').textContent = 'لعبة جديدة';
-            
             showScreen('victoryScreen');
         }
 
         function continueGame() {
-            // Reset match scores but keep wins
             gameState.leftScore = 0;
             gameState.rightScore = 0;
             gameState.paused = false;
             gameState.running = true;
             
-            // Reset ball
             ball.reset();
             
-            // Update displays
             updateScoreDisplay();
             updateWinsDisplay();
             
-            // Show game screen
             showScreen('gameScreen');
             
-            // Start game loop
             lastTime = performance.now();
             requestAnimationFrame(gameLoop);
             
             showToast('بدأت مباراة جديدة!');
         }
 
+        function endGame() {
+            gameState.running = false;
+            if (gameState.isOnline) {
+                onlineManager.disconnect();
+                showScreen('onlineLobby');
+            }
+        }
+
         function restartGame() {
-            startGame(gameState.mode);
+            if (gameState.isOnline) {
+                startOnlineGame();
+            } else {
+                startGame(gameState.mode);
+            }
         }
 
         function togglePause() {
@@ -1446,7 +1890,6 @@
             gameState.showFps = document.getElementById('showFps').checked;
             gameState.tiltControl = document.getElementById('tiltControl').checked;
             
-            // Update UI
             updateSoundButton();
             document.getElementById('fpsCounter').classList.toggle('show', gameState.showFps);
             
@@ -1455,7 +1898,6 @@
         }
 
         function applySettings() {
-            // Apply settings to UI
             document.getElementById('winScore').value = gameState.winScore;
             document.getElementById('gameSpeed').value = gameState.gameSpeed;
             document.getElementById('soundEnabled').checked = gameState.soundEnabled;
@@ -1464,7 +1906,6 @@
             document.getElementById('tiltControl').checked = gameState.tiltControl;
             document.getElementById('darkMode').checked = gameState.darkMode;
             
-            // Update difficulty buttons
             document.querySelectorAll('.toggle-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.textContent.toLowerCase().includes(gameState.difficulty)) {
@@ -1472,14 +1913,12 @@
                 }
             });
             
-            // Apply theme
             if (gameState.darkMode) {
                 document.documentElement.setAttribute('data-theme', 'dark');
             } else {
                 document.documentElement.removeAttribute('data-theme');
             }
             
-            // Update UI elements
             updateSoundButton();
             document.getElementById('fpsCounter').classList.toggle('show', gameState.showFps);
         }
